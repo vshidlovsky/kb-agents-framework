@@ -100,19 +100,26 @@ Recommended for: Spring Boot, Express, NestJS, Django, FastAPI, Go services. Als
 
 The API Registry is listed under Tier 3 but is valuable for any project that consumes HTTP APIs — including mobile and web apps. The setup agent recommends it whenever HTTP client code or API documentation is detected, regardless of project type.
 
-### Tier 4: Cross-Cutting (configuration, i18n, flags)
+### Tier 4: Cross-Cutting (configuration, i18n, flags, conventions)
 
 | Doc Type | What It Captures | Reference Equivalent |
 |----------|-----------------|---------------------|
+| **Project Conventions** | Naming patterns for events, flags, routes, API paths, l10n keys, log formats. Extracted from existing names in the codebase — verifiable, not opinion. | `04-conventions.md` (subset — naming patterns only) |
 | **Feature Flags** | Flag name → key → default → what it gates → consumed by | `11-boss-money-rc-flags.md` (387 lines) |
 | **L10n Registry** | Prefix → feature area → package → key count → example keys | `12-boss-money-l10n-prefixes.md` (269 lines) |
 | **Environment Config** | Environment variables, config files, secrets references, per-environment differences | (new) |
 
-Recommended based on detection: feature flag enums/configs → Feature Flags; ARB/JSON/PO translation files → L10n Registry; .env files or config classes → Environment Config.
+Recommended based on detection: feature flag enums/configs → Feature Flags; ARB/JSON/PO translation files → L10n Registry; .env files or config classes → Environment Config. Project Conventions is always recommended — PRDs reference it to name events, flags, routes, and keys correctly.
 
-### What is NOT a doc type
+### Project Conventions vs Coding Conventions
 
-**Conventions** (`04-conventions.md` in the reference) and **Canonical Examples** (`05-canonical-examples.md`) are excluded. These are prescriptive — they document how code *should* be written, not what *exists*. They belong in a separate conventions framework that uses human-led curation rather than automated extraction.
+Two kinds of conventions exist. This framework handles one; a separate framework handles the other.
+
+**Project conventions** (this framework) — naming patterns for things that appear in PRDs: analytics events (`mt_send_money_tapped` → `{domain}_{action}_{target}`), feature flags (`ENABLE_GOOGLE_PAY` → `SCREAMING_SNAKE_CASE`), route paths, l10n key prefixes, log message formats, API path patterns. These are factual and verifiable — scan existing names and the pattern is self-evident. The PRD writer needs these to write correct specs; the PRD reviewer checks against them.
+
+**Coding conventions** (separate `agent-coding-conventions` framework) — how to structure code: state management patterns per package, error handling approaches, DI registration, file organization, test patterns. These require deep judgment about what to enforce versus tolerate and need human-led curation rather than automated extraction.
+
+The boundary: if a PRD author needs it to write a correct spec, it's a project convention. If a developer needs it to write correct code, it's a coding convention. Some overlap exists — the project conventions doc may note "events use snake_case" while the coding conventions doc explains the full analytics event implementation pattern. Cross-reference, don't duplicate.
 
 The KB framework detects if a conventions doc exists and cross-references it in `kb-context.md`, but does not generate or maintain it.
 
@@ -153,11 +160,11 @@ Mirrors `prd-agents-framework/agents/project-setup.md`.
 | 2 | Map repo layout (`find . -maxdepth 3 -type d`, excluding build artifacts) |
 | 3 | Detect monorepo vs single-app vs multi-service |
 | 4 | Identify apps/services (count entry points, app manifests) |
-| 5 | Detect existing knowledge bases (`.ai-docs/`, `docs/kb/`, embedded CLAUDE.md architecture) |
+| 5 | Detect existing knowledge bases (`docs/project-kb/`, `docs/kb/`, embedded CLAUDE.md architecture) |
 | 6 | Recommend doc types by tier based on project type |
 | 7 | Ask user: scope (which apps/services if monorepo), custom doc types, conventions doc path |
 | 8 | Draft `kb-context.md` with all fields filled, `[TODO]` for unknowns |
-| 9 | Create `.ai-docs/` directory and `.ai-docs/.kb-manifest.json` |
+| 9 | Create `docs/project-kb/` directory and `docs/project-kb/.manifest.json` |
 | 10 | Present summary, user reviews and confirms |
 
 ### Agent detail: KB Generator
@@ -168,13 +175,13 @@ The core extraction agent. Invoked per doc type (or batch of types) by the skill
 |------|--------|
 | 0 | Read `.claude/kb-context.md` for project config, scope, exclusions |
 | 1 | Read the doc type registry entry for the requested doc type |
-| 2 | Read `.ai-docs/.kb-manifest.json` to check what already exists |
+| 2 | Read `docs/project-kb/.manifest.json` to check what already exists |
 | 3 | Capture HEAD commit SHA for file reference grounding |
 | 4 | Execute the extraction strategy from the registry (scan directories, read manifests, trace imports, build tables) |
 | 5 | Apply the output template, generating markdown with citation-grounded tables and cross-references |
 | 6 | Enforce quality guardrails: line budget check, citation check, no convention leakage |
-| 7 | Write output to `.ai-docs/{NN}-{doc-name}.md` with sequential numbering |
-| 8 | Update `.ai-docs/.kb-manifest.json` with generation metadata |
+| 7 | Write output to `docs/project-kb/{NN}-{doc-name}.md` with sequential numbering |
+| 8 | Update `docs/project-kb/.manifest.json` with generation metadata |
 | 9 | Commit: `docs(kb): generate {doc-name}` |
 
 ### Agent detail: KB Validator
@@ -183,7 +190,7 @@ Accuracy checker. Runs after generation or on demand.
 
 | Step | Action |
 |------|--------|
-| 0 | Read `.claude/kb-context.md` and `.ai-docs/.kb-manifest.json` |
+| 0 | Read `.claude/kb-context.md` and `docs/project-kb/.manifest.json` |
 | 1 | For each doc, run checks from `quality-patterns.md`: |
 |   | — File existence: every cited path → `[ -f "{path}" ]` |
 |   | — Route accuracy: every route string → grep in route registration files |
@@ -201,7 +208,7 @@ Incremental update agent. Detects what changed and regenerates only stale docs.
 
 | Step | Action |
 |------|--------|
-| 0 | Read `.claude/kb-context.md` and `.ai-docs/.kb-manifest.json` |
+| 0 | Read `.claude/kb-context.md` and `docs/project-kb/.manifest.json` |
 | 1 | `git diff --name-only {last_commit_sha}..HEAD -- {source_dirs}` |
 | 2 | Map changed files → affected doc types using scope globs from manifest |
 | 3 | For each stale doc: determine if full regeneration or targeted patch |
@@ -241,19 +248,29 @@ Two skills orchestrate the agents with human gates between phases.
     │   Spawn kb-generator for enabled Tier 2/3 doc types
     │   🔵 Gate 2: User reviews Tier 2/3 docs
     │
-    ├── Phase 3: Tier 4 Generation (cross-cutting docs)
-    │   Spawn kb-generator for enabled Tier 4 doc types
+    ├── Phase 3: Tier 4 Generation (cross-cutting docs, except conventions)
+    │   Spawn kb-generator for enabled Tier 4 doc types (feature-flags, l10n, env-config)
     │   🔵 Gate 3: User reviews Tier 4 docs
     │
-    ├── Phase 4: Validation
+    ├── Phase 4: Convention Discovery
+    │   Scan codebase for naming patterns across all domains
+    │   (uses Tier 2/3/4 outputs as input where available)
+    │   Present each candidate convention individually:
+    │     "I found analytics events follow {domain}_{action}_{target}.
+    │      Examples: mt_send_money_tapped, auth_login_succeeded.
+    │      Confirm / edit / skip?"
+    │   🔵 Gate 4: User confirms, edits, or skips each convention
+    │   Write confirmed conventions to docs/project-kb/project-conventions.md
+    │
+    ├── Phase 5: Validation
     │   Spawn kb-validator on all generated docs
     │   Present validation report
-    │   🔵 Gate 4: User reviews failures, decides to fix or accept
+    │   🔵 Gate 5: User reviews failures, decides to fix or accept
     │
-    ├── Phase 5: Cross-Reference Pass
+    ├── Phase 6: Cross-Reference Pass
     │   Verify cross-references between docs are correct
     │   Add "See also" links where docs reference each other
-    │   🔵 Gate 5: User confirms final KB
+    │   🔵 Gate 6: User confirms final KB
     │
     └── Completion
         Summary: generated docs, file paths, total lines, validation status
@@ -267,7 +284,7 @@ Two skills orchestrate the agents with human gates between phases.
 /refresh-kb
     │
     ├── Pre-flight
-    │   Verify kb-context.md and .kb-manifest.json exist
+    │   Verify kb-context.md and .manifest.json exist
     │
     ├── Phase 1: Change Detection
     │   Spawn kb-refresher to detect stale docs
@@ -278,13 +295,19 @@ Two skills orchestrate the agents with human gates between phases.
     │   Spawn kb-generator for each doc to refresh
     │   🔵 Gate 2: User reviews refreshed docs
     │
-    ├── Phase 3: Validation
+    ├── Phase 3: Convention Check
+    │   Scan refreshed docs + changed code for new naming patterns
+    │   Compare against existing conventions in project-conventions.md
+    │   If new patterns found: propose each individually
+    │   🔵 Gate 3: User confirms, edits, or skips new conventions
+    │
+    ├── Phase 4: Validation
     │   Spawn kb-validator on refreshed docs
     │   Present validation report
-    │   🔵 Gate 3: User confirms
+    │   🔵 Gate 4: User confirms
     │
     └── Completion
-        Summary: refreshed, untouched, validation status
+        Summary: refreshed, untouched, new conventions added, validation status
 ```
 
 ---
@@ -307,8 +330,8 @@ Equivalent of `prd-agents-framework/project-context.md`. Copied into target proj
 ## KB Configuration
 
 ### Output Path
-- KB directory (default: .ai-docs/)
-- Manifest file (default: .ai-docs/.kb-manifest.json)
+- KB directory: `docs/project-kb/`
+- Manifest file: `docs/project-kb/.manifest.json`
 
 ### Apps/Services in Scope
 - Table: app name → path → include [x]/[ ]
@@ -317,7 +340,7 @@ Equivalent of `prd-agents-framework/project-context.md`. Copied into target proj
 - Tier 1 (Universal): [x] repo-map, [x] app-profiles, [x] shared-code, [x] gotchas
 - Tier 2 (Frontend/Mobile): [ ] screen-inventory, [ ] navigation-graph, [ ] dependency-index
 - Tier 3 (Backend/API): [ ] api-registry, [ ] database-schema, [ ] service-map
-- Tier 4 (Cross-Cutting): [ ] feature-flags, [ ] l10n-registry, [ ] env-config
+- Tier 4 (Cross-Cutting): [x] project-conventions, [ ] feature-flags, [ ] l10n-registry, [ ] env-config
 
 ### Custom Doc Types
 - Path per custom type, or "none"
@@ -338,7 +361,7 @@ Equivalent of `prd-agents-framework/project-context.md`. Copied into target proj
 - KB path to set in project-context.md Research Configuration > Knowledge base
 ```
 
-### `.kb-manifest.json` — Generation State
+### `.manifest.json` — Generation State
 
 Tracks per-document generation metadata for incremental refresh.
 
@@ -378,7 +401,7 @@ Defined in `agents/quality-patterns.md`, enforced by the generator and validator
 | **Ungrounded claim** | Any statement not backed by a file path citation. |
 | **Stale reference** | Citing a file that doesn't exist or a route that isn't registered. |
 | **Scope creep** | Including information about packages/apps not in the KB scope. |
-| **Convention leakage** | Documenting HOW code should be written. KB docs document WHAT exists. |
+| **Coding convention leakage** | Documenting HOW to structure code (state management, DI, file organization). KB docs document naming patterns and what exists, not implementation patterns. |
 | **Redundancy across docs** | Repeating information in multiple docs. Use cross-references. |
 | **Missing cross-reference** | A screen inventory entry without a nav graph link, or API registry entry without a dependency index link. |
 
@@ -397,9 +420,9 @@ Defined in `agents/quality-patterns.md`, enforced by the generator and validator
 
 Every generated document follows these rules:
 
-- Header line: `> Generated {date} at commit [{short_sha}]({permalink}). Every claim cites real files.`
+- Header line: `> Generated {date} at commit {short_sha}. Every claim cites real files.`
 - Tables for inventories and registries, not prose
-- File paths as citations for every claim
+- **Local file paths, not permalinks.** Agents consume paths via the Read tool. Permalinks add noise to dense tables. The commit SHA in the header and manifest provides traceability. Staleness is handled by the refresh pipeline regenerating docs, not by permalink archaeology. (This differs from the PRD researcher, which uses permalinks because research docs are read weeks later when code may have changed.)
 - "See also" cross-references to related docs
 - No verbatim code dumps — summarize structure, cite paths
 
@@ -409,8 +432,8 @@ Every generated document follows these rules:
 
 The PRD framework's researcher agent already supports knowledge bases. The integration requires no changes to the PRD framework:
 
-1. **KB Setup** writes the KB path (`.ai-docs/`) into `project-context.md` under `Research Configuration > Knowledge base`
-2. **PRD Researcher** (Step 0) reads `.ai-docs/` before touching source code — this behavior already exists
+1. **KB Setup** writes the KB path (`docs/project-kb/`) into `project-context.md` under `Research Configuration > Knowledge base`
+2. **PRD Researcher** (Step 0) reads `docs/project-kb/` before touching source code — this behavior already exists
 3. **Benefits**: Researcher uses repo map to navigate, screen inventory to find relevant screens, API registry for endpoint contracts, dependency index for class usage. Research time drops from full codebase discovery to targeted lookups.
 
 The `kb-context.md` includes a field pointing to `project-context.md` so the KB setup agent can auto-configure this integration when both frameworks are installed.
@@ -447,6 +470,7 @@ kb-agents-framework/
 │       ├── api-registry.md
 │       ├── database-schema.md
 │       ├── service-map.md
+│       ├── project-conventions.md
 │       ├── feature-flags.md
 │       ├── l10n-registry.md
 │       └── env-config.md
@@ -476,8 +500,8 @@ target-project/
 │       │   └── SKILL.md
 │       └── refresh-kb/
 │           └── SKILL.md
-├── .ai-docs/                      # Generated KB (created by kb-setup)
-│   ├── .kb-manifest.json
+├── docs/project-kb/                      # Generated KB (created by kb-setup)
+│   ├── .manifest.json
 │   ├── 01-repo-map.md
 │   ├── 02-apps/
 │   │   └── {app-name}.md
@@ -503,7 +527,7 @@ Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) becau
 | Priority | File | Purpose |
 |----------|------|---------|
 | 1 | `kb-context.md` | Configuration template |
-| 2 | `agents/doc-type-registry.md` | All 13 doc types defined |
+| 2 | `agents/doc-type-registry.md` | All 14 doc types defined |
 | 3 | `agents/quality-patterns.md` | Quality guardrails |
 | 4 | `templates/doc-types/repo-map.md` | First output template |
 | 5 | `agents/kb-generator.md` | Extraction agent (Tier 1 only) |
@@ -545,7 +569,7 @@ Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) becau
 
 ## 11. Reference Implementation Analysis
 
-The hand-built `.ai-docs/` in money-app-2 provides the empirical basis for this framework's design decisions. Key observations:
+The hand-built `docs/project-kb/` in money-app-2 provides the empirical basis for this framework's design decisions. Key observations:
 
 ### What makes it effective for agents
 
@@ -571,12 +595,13 @@ The hand-built `.ai-docs/` in money-app-2 provides the empirical basis for this 
 | Extract all HTTP endpoints with DTOs and consumers | API Registry generator: service class scanning + consumer grep |
 | Identify feature flag enums and consumption points | Feature Flags generator: flag definition + usage scanning |
 | Discover anti-patterns, version confusion, dead code | Gotchas generator: naming analysis + orphan detection |
+| Extract naming patterns for events, flags, routes, keys | Project Conventions generator: scan existing names → derive patterns |
 
 ### What the framework cannot automate
 
 **Judgment calls.** The gotchas doc includes explanations like "this naming is preserved for backwards compatibility" — that requires institutional knowledge. The framework flags naming confusion but cannot explain *why* the confusion exists.
 
-**Convention rules.** "Use Cubit in wallet, ChangeNotifier in money_transfer_v2" is a prescriptive rule derived from team decisions, not code analysis. This belongs in the conventions framework.
+**Coding convention rules.** "Use Cubit in wallet, ChangeNotifier in money_transfer_v2" is a prescriptive rule derived from team decisions, not code analysis. This belongs in the coding conventions framework.
 
 **Canonical examples.** "This file is the gold standard for a Scope widget" is a human judgment. The KB framework can identify frequently-imported patterns but cannot certify them as canonical.
 
@@ -665,6 +690,44 @@ Each entry defines what the generator extracts, how it extracts it, and what the
 - **Cross-references**: Links to api-registry, env-config
 
 ### Tier 4
+
+#### project-conventions
+
+Unlike other doc types, project conventions are **not auto-generated and dumped**. They follow the same human-confirmation pattern as PRD lessons: agents propose conventions, users confirm them one by one, confirmed conventions become canonical. This prevents noisy or wrong patterns from entering the inventory.
+
+**Lifecycle:**
+
+- **KB setup (initial)**: Scan existing names across multiple domains → propose candidate conventions → user confirms each → write confirmed conventions to `docs/project-kb/project-conventions.md`
+- **KB refresh (ongoing)**: Detect new naming patterns not covered by existing conventions → propose additions → user confirms → append to conventions file
+- **PRD writer**: Reads conventions file, follows the rules when naming new events, flags, routes, keys
+- **PRD reviewer**: Reads conventions file, checks that proposed names follow the patterns
+
+**Convention format** (mirrors PRD lessons structure):
+
+```markdown
+## C-001: Analytics Event Naming
+- **Domain**: Analytics events
+- **Pattern**: `{domain}_{action}_{target}` in snake_case
+- **Examples**: `mt_send_money_tapped`, `auth_login_succeeded`, `wallet_balance_refreshed`
+- **Writer rule**: Name all new analytics events following this pattern
+- **Reviewer check**: Verify every event name in the PRD matches `{domain}_{action}_{target}` format
+- **Confirmed**: 2026-05-12
+```
+
+**Domains to scan:**
+
+| Domain | What to scan | Example pattern |
+|--------|-------------|-----------------|
+| Analytics events | Event tracking calls | `{domain}_{action}_{target}` snake_case |
+| Feature flags | Flag definitions | `SCREAMING_SNAKE_CASE` with `ENABLE_` prefix |
+| Routes | Route registrations | `/feature-name/action` kebab-case |
+| L10n keys | Translation key prefixes | `{feature}_` prefix in snake_case |
+| Log messages | Log/print calls | `[ServiceName] message` or structured JSON |
+| API paths | Endpoint definitions | `/v1/{domain}/{resource}` versioned kebab-case |
+
+- **Scope globs**: Broad — touches analytics, flag, route, l10n, logging, and API files. Uses other doc type outputs (feature-flags, l10n-registry, api-registry) as input where available.
+- **Output**: `docs/project-kb/project-conventions.md` — numbered entries (C-001, C-002, ...) with pattern, examples, writer rule, reviewer check
+- **Cross-references**: Links to feature-flags, l10n-registry, api-registry, screen-inventory. Referenced by PRD writer and reviewer for naming correctness.
 
 #### feature-flags
 
