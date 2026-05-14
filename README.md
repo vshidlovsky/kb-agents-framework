@@ -70,12 +70,23 @@ The setup agent scans beyond the built-in list and proposes custom packs for pro
 ```
 kb-agents-framework/
 ├── agents/
+│   ├── kb-setup.md                # One-time project setup agent
 │   ├── kb-generator.md            # Document generation agent
+│   ├── kb-validator.md            # Accuracy validation agent
+│   ├── kb-refresher.md            # Incremental refresh agent
 │   ├── doc-type-registry.md       # All 14 doc type packs defined
 │   └── quality-patterns.md        # Anti-patterns and validation checks
+├── skills/
+│   ├── generate-kb/
+│   │   └── SKILL.md               # Full generation pipeline (7 phases)
+│   └── refresh-kb/
+│       └── SKILL.md               # Incremental refresh pipeline (4 phases)
 ├── templates/
 │   └── doc-types/                 # Output templates per doc type
-│       └── repo-map.md            # (more templates coming in Phase 2+)
+│       ├── repo-map.md
+│       ├── app-profile.md
+│       ├── shared-code.md
+│       └── gotchas.md
 ├── kb-context.md                  # Config template (copied to target project)
 ├── docs/
 │   └── architecture.md            # Full architecture design
@@ -86,13 +97,13 @@ kb-agents-framework/
 
 ## Status
 
-**Phase 1: Foundation** — in progress. Configuration template, doc type registry, quality patterns, repo-map template, and generator agent are built. See [docs/architecture.md](docs/architecture.md) for the full design.
+**Phase 3: Validation & Refresh** — complete. All 4 agents, both skills, and Tier 1 templates are built. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ### Implementation Phases
 
-1. **Foundation** (current) — kb-context.md, doc-type-registry, quality-patterns, repo-map template, kb-generator
-2. **Setup and Orchestration** — kb-setup agent, generate-kb skill, remaining Tier 1 templates
-3. **Validation and Refresh** — kb-validator, kb-refresher, refresh-kb skill
+1. **Foundation** — kb-context.md, doc-type-registry, quality-patterns, repo-map template, kb-generator ✓
+2. **Setup and Orchestration** — kb-setup agent, generate-kb skill, remaining Tier 1 templates ✓
+3. **Validation and Refresh** — kb-validator, kb-refresher, refresh-kb skill ✓
 4. **Extended Doc Types** — Tier 2/3/4 templates
 5. **Polish** — custom pack discovery tuning, cross-reference pass, integration test
 
