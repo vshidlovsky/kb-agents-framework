@@ -94,6 +94,8 @@ For each affected doc, recommend a strategy based on freshness:
 
 Override: if a doc is **hotspot-affected**, lower its strategy threshold — treat 0.90-0.94 as "full regeneration" instead of "patch" because hotspot files change frequently and patches accumulate errors.
 
+**Split docs:** For docs with `splitFiles` in the manifest, note which split keys are affected by the changed files. Include this in the refresh plan so the generator can optionally regenerate only the impacted detail files + update the index summary row, rather than regenerating all detail files. The initial implementation may regenerate all detail files; granular per-split-key refresh is an optimization.
+
 ## Step 6: Build Refresh Plan
 
 Produce a structured refresh plan:

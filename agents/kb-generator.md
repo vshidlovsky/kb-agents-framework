@@ -118,9 +118,20 @@ Before writing, verify against quality-patterns.md anti-patterns:
 - [ ] **Cross-references present** (AP-7): Related docs are linked
 - [ ] **Non-obvious only** (AP-8): Every entry fails the "one grep" test
 
-Count the lines. If >1,000, identify sections to split or summarize before writing.
+Count the lines. Estimate token count: `lines × 8`.
 
-Estimate token count: `lines × 8`.
+### Split-file decision
+
+If the doc type has a split-file strategy in the registry AND the line count exceeds 500:
+
+1. Set `split_mode = true`
+2. Group the extracted data by the split key defined in the registry
+3. Verify: index file should be 50-100 lines; each detail file 100-300 lines
+4. If any detail file exceeds 300 lines, consider splitting further by sub-domain
+
+If under 500 lines, set `split_mode = false` and use the single-file template.
+
+Hysteresis: when regenerating an existing split doc, only collapse back to single-file if output drops below 350 lines.
 
 ## Step 7: Resolve Cross-References
 
@@ -137,21 +148,32 @@ If the target doc hasn't been generated yet (not in manifest), keep the `{NN}-` 
 
 ## Step 8: Write Output
 
-Write the generated document to:
+**Single-file mode:** Write the generated document to:
 
 ```
 docs/project-kb/{sequence_number}-{doc-name}.md
 ```
 
-For app-profiles (which produce one file per app):
+**App-profiles** (one file per app):
 
 ```
 docs/project-kb/{sequence_number}-apps/{app-name}.md
 ```
 
+**Split-file mode:** Write index + detail files:
+
+```
+docs/project-kb/{sequence_number}-{doc-name}.md          ← index file (50-100 lines)
+docs/project-kb/{sequence_number}-{doc-name}/{split-key}.md  ← one per domain/package
+```
+
+Create the detail directory first. If transitioning from a previous single-file doc to split layout, the old single file is replaced by the new index file (same filename).
+
 ## Step 9: Update Manifest
 
 Read the current `docs/project-kb/.manifest.json`. Add or update the entry for this doc type following the schema in `agents/manifest-schema.md`:
+
+**Single-file mode:**
 
 ```json
 "{doc_type}": {
@@ -166,7 +188,27 @@ Read the current `docs/project-kb/.manifest.json`. Add or update the entry for t
   "status": "current",
   "scopeGlobs": [{array of scope globs from the pack definition}],
   "staleSince": null,
-  "staleFiles": null
+  "staleFiles": null,
+  "splitFiles": null
+}
+```
+
+**Split-file mode:** The parent `lineCount` and `tokenEstimate` cover only the index file. Detail file metrics go in `splitFiles`:
+
+```json
+"{doc_type}": {
+  "file": "{sequence_number}-{doc-name}.md",
+  "lineCount": {index file lines},
+  "tokenEstimate": {index file lines × 8},
+  "splitFiles": [
+    {
+      "file": "{sequence_number}-{doc-name}/{split-key}.md",
+      "splitKey": "{split-key}",
+      "lineCount": {detail file lines},
+      "tokenEstimate": {detail file lines × 8}
+    }
+  ],
+  ...other fields same as single-file...
 }
 ```
 
@@ -174,9 +216,18 @@ Write the updated manifest back.
 
 ## Step 10: Commit
 
+**Single-file mode:**
+
 ```bash
 git add "docs/project-kb/{output_file}" "docs/project-kb/.manifest.json"
 git commit -m "docs(kb): generate {doc-name}"
+```
+
+**Split-file mode:**
+
+```bash
+git add "docs/project-kb/{output_file}" "docs/project-kb/{sequence_number}-{doc-name}/" "docs/project-kb/.manifest.json"
+git commit -m "docs(kb): generate {doc-name} (split: {N} detail files)"
 ```
 
 ## Special handling: project-conventions

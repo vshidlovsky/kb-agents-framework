@@ -274,7 +274,28 @@ Per-package tables:
 |-------------|-------|-----------|-------|
 | SendMoneyPage | `/send-money` | `packages/mt/lib/pages/send_money_page.dart` | |
 
-**Cross-references:** Links to navigation-graph, dependency-index
+**Split-file strategy:**
+
+When the combined output exceeds 500 lines, generate a split-file layout:
+
+- **Index file** (`{NN}-screen-inventory.md`): 50-100 lines. Contains:
+  - Overview (total screens, router type, router file)
+  - Route Registration section (shared routing infrastructure)
+  - Package summary table: Package | Screen Count | Router Type | link to detail file
+  - Unrouted screens (cross-package, if any)
+  - See Also cross-references
+
+- **Detail files** (`{NN}-screen-inventory/{package-name}.md`): One per package. Contains:
+  - Full screen table for that package (same per-package table format)
+  - Back-link to index file
+
+- **Split key**: Package that owns the screens
+- **Naming**: kebab-case package name
+- **Threshold**: Split at 500+ lines; collapse back to single file below 350 lines
+
+If under 500 lines, generate a single file using the standard format.
+
+**Cross-references:** Links to navigation-graph, dependency-index. Other docs link to the index file, not detail files.
 
 ---
 
@@ -362,7 +383,28 @@ Source: `packages/credit_card/lib/managers/payment_method_manager.dart`
 
 Plus a summary table at the end for quick lookup (class, type, defined in, consumer count).
 
-**Cross-references:** Links to screen-inventory, api-registry
+**Split-file strategy:**
+
+When the combined output exceeds 500 lines, generate a split-file layout:
+
+- **Index file** (`{NN}-dependency-index.md`): 50-100 lines. Contains:
+  - Overview (total classes, total consumers, top 3 most-consumed)
+  - Summary table: Class | Type | Package | Consumer Count — one row per class, sorted by count
+  - Detail Files table: one row per detail file with link, package name, class count
+  - See Also cross-references
+
+- **Detail files** (`{NN}-dependency-index/{package-name}.md`): One per source package. Contains:
+  - Full per-class entries with complete consumer lists (same format as single-file output)
+  - Scoped summary and orphaned classes tables
+  - Back-link to index file
+
+- **Split key**: Source package where the class is defined (from the `Source:` path)
+- **Naming**: kebab-case package name: `core.md`, `money-transfer-v2.md`, `wallet.md`
+- **Threshold**: Split at 500+ lines; collapse back to single file below 350 lines
+
+If under 500 lines, generate a single file using the standard format.
+
+**Cross-references:** Links to screen-inventory, api-registry. Other docs link to the index file, not detail files.
 
 ---
 
@@ -433,7 +475,30 @@ After each service's endpoint table, add a DTO Models subsection:
 
 Only document DTOs that are specific to the service. Skip generic wrappers (ApiResponse<T>, Result<T, E>) — just note the inner type.
 
-**Cross-references:** Links to dependency-index, app-profiles
+**Split-file strategy:**
+
+When the combined output exceeds 500 lines, generate a split-file layout:
+
+- **Index file** (`{NN}-api-registry.md`): 50-100 lines. Contains:
+  - Overview (total endpoints, total services, total DTOs)
+  - HTTP stack architecture (shared across all services — interceptors, auth, retry)
+  - Authentication table
+  - Error handling patterns
+  - Service summary table: Service Name | Package | Endpoint Count | link to detail file
+  - See Also cross-references
+
+- **Detail files** (`{NN}-api-registry/{domain}.md`): One per service domain. Contains:
+  - Full per-service endpoint tables with 8 columns
+  - DTO Models subsections for each service
+  - Back-link to index file
+
+- **Split key**: Service domain grouping by package (e.g., `money-transfer`, `wallet`, `calling`, `store`)
+- **Naming**: kebab-case domain name
+- **Threshold**: Split at 500+ lines; collapse back to single file below 350 lines
+
+If under 500 lines, generate a single file using the standard format.
+
+**Cross-references:** Links to dependency-index, app-profiles. Other docs link to the index file, not detail files.
 
 ---
 

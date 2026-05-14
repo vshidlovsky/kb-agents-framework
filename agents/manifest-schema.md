@@ -27,7 +27,15 @@ The manifest lives at `docs/project-kb/.manifest.json` in the target project.
       "status": "current | stale | regenerating",
       "scopeGlobs": ["array of glob patterns from pack definition"],
       "staleSince": "ISO 8601 timestamp | null — set when freshness drops below threshold",
-      "staleFiles": ["array of changed file paths that triggered staleness | null"]
+      "staleFiles": ["array of changed file paths that triggered staleness | null"],
+      "splitFiles": [
+        {
+          "file": "string — relative path from KB directory, e.g. '07-dependency-index/core.md'",
+          "splitKey": "string — the domain/package this detail file covers",
+          "lineCount": "number",
+          "tokenEstimate": "number"
+        }
+      ]
     }
   }
 }
@@ -61,6 +69,7 @@ The manifest lives at `docs/project-kb/.manifest.json` in the target project.
 | `scopeGlobs` | yes | kb-generator | Glob patterns defining which source files this doc covers. Used by refresher for change detection. |
 | `staleSince` | no | kb-refresher | When this doc first became stale. Null if current. |
 | `staleFiles` | no | kb-refresher | Source files that changed since last generation, triggering staleness. Null if current. |
+| `splitFiles` | no | kb-generator | Array of detail files for split docs. Null/omitted for single-file docs. Each entry: `file` (relative path), `splitKey` (domain/package name), `lineCount`, `tokenEstimate`. The parent `lineCount` and `tokenEstimate` cover only the index file. |
 
 ## Freshness Scoring
 
@@ -100,7 +109,8 @@ Thresholds:
       "status": "current",
       "scopeGlobs": ["**/pubspec.yaml", "**/package.json", "melos.yaml"],
       "staleSince": null,
-      "staleFiles": null
+      "staleFiles": null,
+      "splitFiles": null
     },
     "screen-inventory": {
       "file": "05-screen-inventory.md",
@@ -114,7 +124,27 @@ Thresholds:
       "status": "stale",
       "scopeGlobs": ["**/pages/**", "**/screens/**", "**/views/**", "**/router*"],
       "staleSince": "2026-05-13T12:00:00Z",
-      "staleFiles": ["packages/money_transfer/lib/pages/new_recipient_page.dart"]
+      "staleFiles": ["packages/money_transfer/lib/pages/new_recipient_page.dart"],
+      "splitFiles": null
+    },
+    "dependency-index": {
+      "file": "07-dependency-index.md",
+      "generatedAt": "2026-05-13T10:50:00Z",
+      "commitSha": "a1b2c3d",
+      "sourceFileCount": 85,
+      "lineCount": 65,
+      "tokenEstimate": 520,
+      "freshness": 1.0,
+      "loadPriority": "warm",
+      "status": "current",
+      "scopeGlobs": ["**/managers/**", "**/controllers/**", "**/services/**"],
+      "staleSince": null,
+      "staleFiles": null,
+      "splitFiles": [
+        { "file": "07-dependency-index/core.md", "splitKey": "core", "lineCount": 280, "tokenEstimate": 2240 },
+        { "file": "07-dependency-index/money-transfer-v2.md", "splitKey": "money-transfer-v2", "lineCount": 190, "tokenEstimate": 1520 },
+        { "file": "07-dependency-index/wallet.md", "splitKey": "wallet", "lineCount": 210, "tokenEstimate": 1680 }
+      ]
     }
   }
 }

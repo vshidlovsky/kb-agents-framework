@@ -218,14 +218,15 @@ gotchas        → 04-gotchas.md
 
 ### Step 2: Resolve Placeholders
 
-For each generated doc in `docs/project-kb/`:
+For each generated doc in `docs/project-kb/` (including detail files in subdirectories):
 
 1. Read the file
 2. Find all `{NN}-` placeholder patterns in "See Also" sections and anywhere else in the doc
 3. Replace each `{NN}-{doc-name}.md` with the actual filename from the file map
 4. Replace each `{NN}-apps/` with the actual apps directory prefix
-5. If a referenced doc wasn't generated (not in manifest), **remove the See Also line** and add a comment: `<!-- {doc-type} not generated -->`
-6. Write the updated file
+5. For split docs: also resolve placeholders in all detail files within `{NN}-{doc-name}/` subdirectories. Detail files may reference other doc types in their back-links.
+6. If a referenced doc wasn't generated (not in manifest), **remove the See Also line** and add a comment: `<!-- {doc-type} not generated -->`
+7. Write the updated file
 
 ### Step 3: Verify Bidirectional Links
 
@@ -253,13 +254,14 @@ Present the final KB summary:
 ```
 ## Knowledge Base Complete
 
-| # | Doc | File | Lines | Tokens | Priority | Freshness |
-|---|-----|------|-------|--------|----------|-----------|
-| 01 | Repo Map | 01-repo-map.md | 342 | 2,736 | hot | 1.0 |
-| 02 | App: {name} | 02-apps/{name}.md | 200 | 1,600 | hot | 1.0 |
-| ... | ... | ... | ... | ... | ... | ... |
+| # | Doc | File | Lines (index) | Lines (total) | Tokens (index) | Priority | Freshness |
+|---|-----|------|---------------|---------------|----------------|----------|-----------|
+| 01 | Repo Map | 01-repo-map.md | 342 | 342 | 2,736 | hot | 1.0 |
+| 02 | App: {name} | 02-apps/{name}.md | 200 | 200 | 1,600 | hot | 1.0 |
+| 07 | Dependency Index | 07-dependency-index.md | 65 | 1,265 (5 files) | 520 | warm | 1.0 |
+| ... | ... | ... | ... | ... | ... | ... | ... |
 
-**Total**: {N} docs, {L} lines, ~{T} tokens
+**Total**: {N} docs, {L} index lines (agents load), {T_total} total lines, ~{T} tokens
 **Validation**: {P} passed, {W} warnings, {F} failures
 **Conventions**: {C} confirmed
 

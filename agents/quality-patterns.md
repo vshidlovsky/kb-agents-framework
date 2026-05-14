@@ -124,11 +124,13 @@ Count items in the doc vs items found by a fresh scan. Flag if >10% missing.
 
 ### VC-5: Line budget
 
-Warn if any doc exceeds 1,000 lines.
+**Single-file docs:** Warn if any doc exceeds 1,000 lines.
 
 **Method:** `wc -l "$doc"`
 
 **Result:** WARN at >1,000 lines. Suggest splitting into sub-documents or summarizing verbose sections.
+
+**Split docs:** Check index file (warn >100 lines) and each detail file (warn >300 lines) individually. The split-file pattern is the framework's solution to large docs — a split doc should never trigger a line budget warning at the aggregate level.
 
 ### VC-6: Cross-reference bidirectionality
 

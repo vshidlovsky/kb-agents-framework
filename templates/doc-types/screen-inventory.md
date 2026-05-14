@@ -1,9 +1,79 @@
 # Screen Inventory Output Template
 
 > One row per screen/page in the app. The KB Generator reads this template and fills it.
+> For large projects (500+ lines), use the split-file layout: summary index + per-package detail files.
 > Delete the `> TEMPLATE` blocks when generating.
 
 ---
+
+## Split Layout: Index File Template
+
+> Use when combined output exceeds 500 lines.
+> Target: 50-100 lines. Contains routing infrastructure + package lookup table.
+
+```markdown
+# Screen Inventory
+
+> Generated {date} at commit {short_sha}. Freshness: {score}. Every claim cites real files.
+> Load priority: warm. Load when touching: routes, pages, screens, views.
+> Split doc: detail files in `{NN}-screen-inventory/`. Load the one matching your working package.
+
+## Overview
+
+{N} screens across {M} packages. Router: {GoRouter / Navigator 1.0 / etc.} (`{router_file}`).
+
+## Route Registration
+
+- **Router file**: `{path}`
+- **Registration pattern**: {description}
+- **Total registered routes**: {N}
+
+## Screens by Package
+
+> TEMPLATE: Lookup table — agents find which detail file has the screens they need.
+
+| Package | Screens | Router | Detail |
+|---------|---------|--------|--------|
+| `{package}` | {count} | {GoRouter/Nav 1.0} | [{package}.md]({NN}-screen-inventory/{package}.md) |
+
+## Unrouted Screens
+
+> TEMPLATE: Screens not registered in any router. Skip if none found.
+
+| Screen Name | File Path | Likely Reason |
+|-------------|-----------|---------------|
+| `{ScreenName}` | `{path}` | {dialog / bottom sheet / dead code} |
+
+## See Also
+
+- [Navigation Graph]({NN}-navigation-graph.md) — screen-to-screen transitions
+- [Dependency Index]({NN}-dependency-index.md) — which managers/services feed which screens
+- [App Profiles]({NN}-apps/) — per-app routing overview
+```
+
+## Split Layout: Detail File Template
+
+> One file per package. Target: 100-300 lines.
+> Agent loads this when working in the matching package.
+
+```markdown
+# Screen Inventory: {Package Name}
+
+> Part of [{NN}-screen-inventory.md](../{NN}-screen-inventory.md). Generated {date} at commit {short_sha}.
+> Load when working in `packages/{package}/` or on routes owned by this package.
+
+## Screens
+
+| Screen Name | Route | File Path | Notes |
+|-------------|-------|-----------|-------|
+| `{ScreenName}` | `{/route/path}` | `{path/to/screen}` | {guards, redirects, or blank} |
+
+{Repeat for all screens in this package}
+```
+
+## Single-File Template
+
+> Use when combined output is under 500 lines.
 
 ```markdown
 # Screen Inventory
@@ -13,29 +83,17 @@
 
 ## Overview
 
-> TEMPLATE: One-line summary of screen landscape.
-
-{N} screens across {M} packages/modules. Router: {GoRouter / React Router / etc.} (`{router_file}`).
+{N} screens across {M} packages. Router: {GoRouter / etc.} (`{router_file}`).
 
 ## Screens by Package
 
-> TEMPLATE: One table per package that owns screens. Sort packages by screen count (descending).
-> Each row is one screen/page/view. Route is the string used in navigation.
-> File path is the component/widget file, not the route registration.
+> TEMPLATE: One table per package. Sort by screen count descending.
 
 ### {Package Name} ({N} screens)
 
 | Screen Name | Route | File Path | Notes |
 |-------------|-------|-----------|-------|
-| `{ScreenName}` | `{/route/path}` | `{path/to/screen.dart}` | {guards, redirects, or blank} |
-
----
-
-### {Next Package} ({N} screens)
-
-| Screen Name | Route | File Path | Notes |
-|-------------|-------|-----------|-------|
-| `{ScreenName}` | `{/route/path}` | `{path/to/screen.tsx}` | |
+| `{ScreenName}` | `{/route/path}` | `{path/to/screen}` | |
 
 ---
 
@@ -43,20 +101,15 @@
 
 ## Route Registration
 
-> TEMPLATE: Where routes are registered and how to find them.
-
 - **Router file**: `{path}`
-- **Registration pattern**: {description — e.g., "GoRoute objects in router.dart", "file-based routing in pages/"}
+- **Registration pattern**: {description}
 - **Total registered routes**: {N}
 
 ## Unrouted Screens
 
-> TEMPLATE: Screens/pages that exist as files but aren't registered in the router.
-> These may be dialogs, bottom sheets, or dead code. Skip this section if none found.
-
 | Screen Name | File Path | Likely Reason |
 |-------------|-----------|---------------|
-| `{ScreenName}` | `{path}` | {dialog / bottom sheet / dead code / embedded widget} |
+| `{ScreenName}` | `{path}` | {dialog / bottom sheet / dead code} |
 
 ## See Also
 
