@@ -83,10 +83,20 @@ kb-agents-framework/
 │       └── SKILL.md               # Incremental refresh pipeline (4 phases)
 ├── templates/
 │   └── doc-types/                 # Output templates per doc type
-│       ├── repo-map.md
+│       ├── repo-map.md            # Tier 1
 │       ├── app-profile.md
 │       ├── shared-code.md
-│       └── gotchas.md
+│       ├── gotchas.md
+│       ├── screen-inventory.md    # Tier 2
+│       ├── navigation-graph.md
+│       ├── dependency-index.md
+│       ├── api-registry.md        # Tier 3
+│       ├── database-schema.md
+│       ├── service-map.md
+│       ├── project-conventions.md # Tier 4
+│       ├── feature-flags.md
+│       ├── l10n-registry.md
+│       └── env-config.md
 ├── kb-context.md                  # Config template (copied to target project)
 ├── docs/
 │   └── architecture.md            # Full architecture design
@@ -97,14 +107,14 @@ kb-agents-framework/
 
 ## Status
 
-**Phase 3: Validation & Refresh** — complete. All 4 agents, both skills, and Tier 1 templates are built. See [docs/architecture.md](docs/architecture.md) for the full design.
+**Phase 4: Extended Doc Types** — complete. All 4 agents, both skills, and all 14 doc type templates are built. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ### Implementation Phases
 
 1. **Foundation** — kb-context.md, doc-type-registry, quality-patterns, repo-map template, kb-generator ✓
 2. **Setup and Orchestration** — kb-setup agent, generate-kb skill, remaining Tier 1 templates ✓
 3. **Validation and Refresh** — kb-validator, kb-refresher, refresh-kb skill ✓
-4. **Extended Doc Types** — Tier 2/3/4 templates
+4. **Extended Doc Types** — Tier 2/3/4 templates (all 14) ✓
 5. **Polish** — custom pack discovery tuning, cross-reference pass, integration test
 
 ## Research Basis
