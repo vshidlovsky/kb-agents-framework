@@ -28,33 +28,45 @@
 
 ### {Service Name} (`{service_file_path}`)
 
-| Method | Path | Service Method | Consumer | Request DTO | Response DTO |
-|--------|------|----------------|----------|-------------|--------------|
-| {GET/POST/PUT/DELETE/PATCH} | `{/v1/resource}` | `{methodName()}` | `{ConsumerClass}` | `{RequestDto}` | `{ResponseDto}` |
+| Method | Path | Service Method | Repository | Consumer | Request DTO | Response DTO |
+|--------|------|----------------|------------|----------|-------------|--------------|
+| {GET/POST/PUT/DELETE/PATCH} | `{/v1/resource}` | `{methodName()}` | `{RepoClass}` | `{ConsumerClass}` | `{RequestDto}` | `{ResponseDto}` |
 
 **Base URL**: {base URL config reference or "per-environment — see env-config"}
+
+#### DTO Models
+
+> TEMPLATE: Document request/response DTO shapes for endpoints in this service.
+> Only include DTOs specific to this service. Skip generic wrappers (ApiResponse<T>, Result<T, E>) — note the inner type.
+> One field table per DTO. Keep it compact — agents need field names and types, not full docs.
+
+**{RequestDto}** (`{dto_file_path}`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `{fieldName}` | `{type}` | {constraints or enum values, if notable} |
+
+**{ResponseDto}** (`{dto_file_path}`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `{fieldName}` | `{type}` | |
 
 ---
 
 ### {Next Service} (`{path}`)
 
-| Method | Path | Service Method | Consumer | Request DTO | Response DTO |
-|--------|------|----------------|----------|-------------|--------------|
-| ... | ... | ... | ... | ... | ... |
+| Method | Path | Service Method | Repository | Consumer | Request DTO | Response DTO |
+|--------|------|----------------|------------|----------|-------------|--------------|
+| ... | ... | ... | ... | ... | ... | ... |
+
+#### DTO Models
+
+{Same pattern as above}
 
 ---
 
 {Repeat for each service}
-
-## DTOs
-
-> TEMPLATE: Data transfer objects used in request/response payloads.
-> Only list DTOs actually referenced in the endpoint tables above.
-> Don't reproduce field definitions — cite the file path so agents can read it.
-
-| DTO | File Path | Used By (endpoints) |
-|-----|-----------|---------------------|
-| `{DtoName}` | `{path}` | `POST /v1/resource`, `GET /v1/resource/:id` |
 
 ## Authentication
 

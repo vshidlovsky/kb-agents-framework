@@ -351,10 +351,14 @@ Per-flow transition tables:
 1. Find all HTTP service/client classes: grep for `@GET`, `@POST`, `@RestController`, `dio.get`, `fetch(`, `axios.`, `http.Client`, `HttpClient`
 2. For each service: extract method (GET/POST/PUT/DELETE), path, request body shape, response shape
 3. For each endpoint, also extract the response type/shape: look for return type annotations, `fromJson` calls, or response mapper usage. Document the response DTO or shape in the Response DTO column. If the response is a generic Result<T, E> wrapper, note the inner type T.
-4. Trace to consumer classes: who calls this service method?
-5. Map to DTOs: what data classes are used for request/response?
-6. Document the HTTP stack architecture: how requests flow from service class through middleware/interceptors to the network layer. This is high-value context for agents writing new API calls.
-7. Group by service/domain
+4. Trace to repository classes: find which repository/data-layer class wraps each service call. Grep for the service method name in repository files (`**/repositories/**`, `**/repos/**`, `**/data/**`). Record the repository class name in the Repository column.
+5. Trace to consumer classes: from the repository (or service if no repository layer), find the UI-layer consumer — manager, cubit, bloc, view-model, controller, or page that invokes the call. Record in the Consumer column.
+6. Map to DTOs: what data classes are used for request/response?
+7. Document DTO shapes inline: after each service's endpoint table, add a **DTO Models** subsection listing the request and response DTOs used by that service. For each DTO, document field names and types in a compact table. This is the highest-value addition — agents need DTO shapes to write correct API calls without reading every model file.
+8. Document the HTTP stack architecture: how requests flow from service class through middleware/interceptors to the network layer. This is high-value context for agents writing new API calls.
+9. Group by service/domain
+
+**Important: completeness target.** Every service class found in step 1 must appear as a section. Do not stop after a subset. If a project has 99 service classes, the output must have 99 sections. The difference between a useful api-registry and a mediocre one is exhaustive coverage.
 
 **Scope globs:**
 
@@ -365,15 +369,42 @@ Per-flow transition tables:
 **/controllers/**
 **/handlers/**
 **/routes/**
+**/repositories/**
+**/repos/**
+**/data/**
 ```
 
 **Output format:**
 
-Per-service tables:
+Per-service tables with 8 columns:
 
-| Method | Path | Service File | Service Method | Consumer | Request DTO | Response DTO |
-|--------|------|-------------|----------------|----------|-------------|--------------|
-| POST | `/v1/transfers` | `transfer_service.dart` | `createTransfer()` | `SendMoneyPage` | `TransferRequest` | `TransferResponse` |
+| Method | Path | Service File | Service Method | Repository | Consumer | Request DTO | Response DTO |
+|--------|------|-------------|----------------|------------|----------|-------------|--------------|
+| POST | `/v1/transfers` | `transfer_service.dart` | `createTransfer()` | `TransferRepository` | `SendMoneyCubit` | `TransferRequest` | `TransferResponse` |
+
+After each service's endpoint table, add a DTO Models subsection:
+
+```
+#### DTO Models
+
+**TransferRequest** (`packages/mt/lib/models/transfer_request.dart`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `amount` | `double` | |
+| `currency` | `String` | ISO 4217 |
+| `recipientId` | `String` | |
+
+**TransferResponse** (`packages/mt/lib/models/transfer_response.dart`)
+
+| Field | Type | Notes |
+|-------|------|-------|
+| `transferId` | `String` | |
+| `status` | `TransferStatus` | enum |
+| `estimatedArrival` | `DateTime` | |
+```
+
+Only document DTOs that are specific to the service. Skip generic wrappers (ApiResponse<T>, Result<T, E>) — just note the inner type.
 
 **Cross-references:** Links to dependency-index, app-profiles
 
