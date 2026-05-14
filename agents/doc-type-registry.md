@@ -312,10 +312,13 @@ Per-flow transition tables:
 
 **Extraction strategy:**
 
-1. Identify key classes: scan for files in managers/, controllers/, services/, view_models/, viewmodels/, hooks/, providers/ directories
+1. Identify key classes: scan for files in managers/, controllers/, services/, view_models/, viewmodels/, hooks/, providers/, blocs/, cubits/, repositories/ directories
 2. For each key class: grep for its import/usage across all page/screen/component files
 3. Build reverse lookup: class → [list of screens that consume it]
-4. Rank by consumer count (most-consumed first)
+4. For transitive consumers: if a class is consumed by a bloc/cubit/view-model that is then consumed by a screen, trace the full chain and note the intermediary (e.g., "via HomeViewModel")
+5. Rank by consumer count (most-consumed first)
+
+**Important: full file paths for all multi-consumer classes.** Every class with 2+ consumers must list every consumer with its full file path. Do not abbreviate paths or truncate consumer lists. This is the core value of the doc — agents need exact file paths for impact analysis, not summaries. If a class has 108 consumers, list all 108. Group consumers by package for readability.
 
 **Scope globs:**
 
@@ -327,13 +330,37 @@ Per-flow transition tables:
 **/viewmodels/**
 **/hooks/**
 **/providers/**
+**/blocs/**
+**/cubits/**
+**/repositories/**
 ```
 
 **Output format:**
 
-| Class | Defined In | Consumers (screens) | Count |
-|-------|-----------|---------------------|-------|
-| `WalletManager` | `packages/wallet/lib/src/wallet_manager.dart` | SendMoneyPage, BalancePage, ... | 12 |
+Per-class entries with full consumer lists:
+
+```
+### NavigationManager (Manager) — 108 consumers
+
+Source: `packages/core/lib/navigation/navigation_manager.dart`
+
+- **auth_v2** (6): biometric_welcome (`packages/auth_v2/lib/pages/biometric_welcome_page.dart`), email_input (`packages/auth_v2/lib/pages/email_input_page.dart`), ...
+- **egifts** (5): brand_search (`packages/egifts/lib/views/brand_search_page.dart`), ...
+```
+
+For classes with fewer than 10 consumers, use a flat list instead of package grouping:
+
+```
+### PaymentMethodManager (Manager) — 4 consumers
+
+Source: `packages/credit_card/lib/managers/payment_method_manager.dart`
+
+- CashInPage (`packages/wallet/lib/cash_in/presentation/pages/cash_in_page.dart`) — via CashInBloc
+- CashOutPage (`packages/wallet/lib/cash_out/presentation/pages/cash_out_page.dart`) — via CashOutBloc
+- ...
+```
+
+Plus a summary table at the end for quick lookup (class, type, defined in, consumer count).
 
 **Cross-references:** Links to screen-inventory, api-registry
 

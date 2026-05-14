@@ -19,35 +19,36 @@
 
 ## Index by Class
 
-> TEMPLATE: One entry per key class (manager, controller, service, view model, hook, provider).
+> TEMPLATE: One entry per key class (manager, controller, service, view model, bloc, cubit, hook, provider, repository).
 > Ranked by consumer count (most-consumed first).
 > Only include classes consumed by 2+ screens — single-use classes aren't useful as an index.
 >
 > "Consumers" are screens/pages/views that import or inject this class.
 > This is the reverse lookup that's expensive to derive from code but trivial from a table.
+>
+> IMPORTANT: List EVERY consumer with its FULL file path. Do not abbreviate paths or truncate
+> consumer lists. Agents need exact paths for impact analysis. If a class has 50 consumers, list all 50.
+> For transitive consumers (class → bloc → screen), note the intermediary with "via {BlocName}".
 
-### `{ClassName}` — {N} consumers
+> TEMPLATE (10+ consumers): Group consumers by package for readability.
 
-- **Defined in**: `{path/to/class_file}`
-- **Type**: {manager / controller / service / view model / hook / provider}
-- **Purpose**: {one sentence — what this class does}
+### {ClassName} ({Type}) — {N} consumers
 
-| Consumer Screen | File Path | Usage |
-|----------------|-----------|-------|
-| `{ScreenName}` | `{path/to/screen}` | {how it uses the class — reads data / triggers action / listens to state} |
-| `{ScreenName}` | `{path/to/screen}` | {usage} |
+Source: `{path/to/class_file}`
+
+- **{package_name}** ({count}): {ScreenName} (`{full/path/to/screen.ext}`), {ScreenName} (`{full/path}`), ...
+- **{package_name}** ({count}): {ScreenName} (`{full/path}`) — via {IntermediaryClass}, ...
 
 ---
 
-### `{NextClassName}` — {N} consumers
+> TEMPLATE (under 10 consumers): Flat list, no package grouping needed.
 
-- **Defined in**: `{path}`
-- **Type**: {type}
-- **Purpose**: {purpose}
+### {ClassName} ({Type}) — {N} consumers
 
-| Consumer Screen | File Path | Usage |
-|----------------|-----------|-------|
-| ... | ... | ... |
+Source: `{path/to/class_file}`
+
+- {ScreenName} (`{full/path/to/screen.ext}`)
+- {ScreenName} (`{full/path}`) — via {IntermediaryClass}
 
 ---
 
