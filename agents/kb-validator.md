@@ -20,7 +20,7 @@ Read `.claude/kb-context.md`. Extract:
 - Output path (`docs/project-kb/`)
 - Scoping rules (line budget, token budget)
 
-Read `docs/project-kb/.manifest.json`. Extract:
+Read `docs/project-kb/.manifest.json` (schema: `agents/manifest-schema.md`). Extract:
 - List of generated documents with file paths, line counts, freshness scores
 - Scope globs per doc (needed for completeness checks)
 

@@ -70,7 +70,7 @@
 
 ## See Also
 
-- [Repo Map](01-repo-map.md) — package inventory and dependency diagram
+- [Repo Map]({NN}-repo-map.md) — package inventory and dependency diagram
 - [Dependency Index]({NN}-dependency-index.md) — which screens consume these classes (if generated)
-- [Gotchas](04-gotchas.md) — anti-patterns found in shared code
+- [Gotchas]({NN}-gotchas.md) — anti-patterns found in shared code
 ```

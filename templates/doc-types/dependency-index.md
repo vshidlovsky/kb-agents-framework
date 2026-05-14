@@ -75,5 +75,5 @@
 
 - [Screen Inventory]({NN}-screen-inventory.md) — screen names and routes referenced above
 - [API Registry]({NN}-api-registry.md) — endpoints these classes call
-- [Shared Code](03-shared-code.md) — package-level view of these classes
+- [Shared Code]({NN}-shared-code.md) — package-level view of these classes
 ```

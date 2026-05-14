@@ -74,6 +74,6 @@
 
 ## See Also
 
-- [Repo Map](01-repo-map.md) — package inventory (gotchas reference package names)
-- [Shared Code](03-shared-code.md) — shared package details (dead code may be in shared packages)
+- [Repo Map]({NN}-repo-map.md) — package inventory (gotchas reference package names)
+- [Shared Code]({NN}-shared-code.md) — shared package details (dead code may be in shared packages)
 ```

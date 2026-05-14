@@ -77,7 +77,7 @@
 ## See Also
 
 - [Dependency Index]({NN}-dependency-index.md) — which screens consume these services
-- [App Profiles](02-apps/) — per-app API client setup
+- [App Profiles]({NN}-apps/) — per-app API client setup
 - [Database Schema]({NN}-database-schema.md) — tables behind these endpoints (if generated)
 - [Service Map]({NN}-service-map.md) — inter-service dependencies (if generated)
 ```

@@ -188,21 +188,44 @@ If "fix" is chosen, regenerate failing docs and re-validate.
 
 ## Phase 6: Cross-Reference Pass
 
-Verify cross-references between all generated docs:
+Resolve all `{NN}-` placeholder links and verify cross-references.
 
-1. For each doc, parse "See also" links
-2. Check that target docs exist and link back
-3. Add missing bidirectional links
-4. Update docs with corrected cross-references
+### Step 1: Build File Map
 
-Present summary:
+Read `docs/project-kb/.manifest.json`. Build a lookup table mapping doc type names to their actual filenames:
+
+```
+repo-map       → 01-repo-map.md
+app-profiles   → 02-apps/
+shared-code    → 03-shared-code.md
+gotchas        → 04-gotchas.md
+...
+```
+
+### Step 2: Resolve Placeholders
+
+For each generated doc in `docs/project-kb/`:
+
+1. Read the file
+2. Find all `{NN}-` placeholder patterns in "See Also" sections and anywhere else in the doc
+3. Replace each `{NN}-{doc-name}.md` with the actual filename from the file map
+4. Replace each `{NN}-apps/` with the actual apps directory prefix
+5. If a referenced doc wasn't generated (not in manifest), **remove the See Also line** and add a comment: `<!-- {doc-type} not generated -->`
+6. Write the updated file
+
+### Step 3: Verify Bidirectional Links
+
+For each cross-reference A → B, check that B → A also exists. Add missing backlinks.
+
+### Step 4: Present Summary
 
 ```
 ## Cross-Reference Pass
 
-{N} cross-references verified.
-{M} missing links added.
-{K} docs updated.
+{N} placeholder links resolved.
+{M} missing backlinks added.
+{K} dangling references removed (doc not generated).
+{J} docs updated.
 ```
 
 ### Gate 6: User confirms final KB

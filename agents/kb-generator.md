@@ -122,7 +122,20 @@ Count the lines. If >1,000, identify sections to split or summarize before writi
 
 Estimate token count: `lines × 8`.
 
-## Step 7: Write Output
+## Step 7: Resolve Cross-References
+
+Before writing, resolve all `{NN}-` placeholders in the "See Also" section.
+
+Read `docs/project-kb/.manifest.json` to find the sequence numbers of other generated docs. For each cross-reference:
+
+1. Look up the target doc type in the manifest's `documents` map
+2. Extract its `file` field (e.g., `"05-screen-inventory.md"`)
+3. Replace `{NN}-{doc-name}.md` with the actual filename
+4. For app-profiles: replace `{NN}-apps/` with the actual directory (e.g., `02-apps/`)
+
+If the target doc hasn't been generated yet (not in manifest), keep the `{NN}-` placeholder — the cross-reference pass at the end of the pipeline will resolve it.
+
+## Step 8: Write Output
 
 Write the generated document to:
 
@@ -136,9 +149,9 @@ For app-profiles (which produce one file per app):
 docs/project-kb/{sequence_number}-apps/{app-name}.md
 ```
 
-## Step 8: Update Manifest
+## Step 9: Update Manifest
 
-Read the current `docs/project-kb/.manifest.json`. Add or update the entry for this doc type:
+Read the current `docs/project-kb/.manifest.json`. Add or update the entry for this doc type following the schema in `agents/manifest-schema.md`:
 
 ```json
 "{doc_type}": {
@@ -151,13 +164,15 @@ Read the current `docs/project-kb/.manifest.json`. Add or update the entry for t
   "freshness": 1.0,
   "loadPriority": "{hot|warm|cold}",
   "status": "current",
-  "scopeGlobs": [{array of scope globs from the pack definition}]
+  "scopeGlobs": [{array of scope globs from the pack definition}],
+  "staleSince": null,
+  "staleFiles": null
 }
 ```
 
 Write the updated manifest back.
 
-## Step 9: Commit
+## Step 10: Commit
 
 ```bash
 git add "docs/project-kb/{output_file}" "docs/project-kb/.manifest.json"

@@ -75,7 +75,8 @@ kb-agents-framework/
 │   ├── kb-validator.md            # Accuracy validation agent
 │   ├── kb-refresher.md            # Incremental refresh agent
 │   ├── doc-type-registry.md       # All 14 doc type packs defined
-│   └── quality-patterns.md        # Anti-patterns and validation checks
+│   ├── quality-patterns.md        # Anti-patterns and validation checks
+│   └── manifest-schema.md         # Canonical .manifest.json schema
 ├── skills/
 │   ├── generate-kb/
 │   │   └── SKILL.md               # Full generation pipeline (7 phases)
@@ -107,7 +108,7 @@ kb-agents-framework/
 
 ## Status
 
-**Phase 4: Extended Doc Types** — complete. All 4 agents, both skills, and all 14 doc type templates are built. See [docs/architecture.md](docs/architecture.md) for the full design.
+**Phase 5: Polish** — complete. All 4 agents, both skills, all 14 templates, manifest schema, and cross-reference resolution are built. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ### Implementation Phases
 
@@ -115,7 +116,7 @@ kb-agents-framework/
 2. **Setup and Orchestration** — kb-setup agent, generate-kb skill, remaining Tier 1 templates ✓
 3. **Validation and Refresh** — kb-validator, kb-refresher, refresh-kb skill ✓
 4. **Extended Doc Types** — Tier 2/3/4 templates (all 14) ✓
-5. **Polish** — custom pack discovery tuning, cross-reference pass, integration test
+5. **Polish** — cross-reference resolution, manifest schema, template consistency ✓
 
 ## Research Basis
 

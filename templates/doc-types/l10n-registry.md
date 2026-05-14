@@ -61,5 +61,5 @@
 
 - [Screen Inventory]({NN}-screen-inventory.md) — which screens use which key prefixes
 - [Project Conventions]({NN}-project-conventions.md) — l10n key naming convention (if documented)
-- [App Profiles](02-apps/) — per-app locale configuration
+- [App Profiles]({NN}-apps/) — per-app locale configuration
 ```

@@ -54,7 +54,7 @@ graph TD
 
 ## See Also
 
-- [App Profiles](02-apps/) — per-app entry points, state management, routing
-- [Shared Code](03-shared-code.md) — detailed contents of shared packages listed above
-- [Gotchas](04-gotchas.md) — anti-patterns and pitfalls found in this repo structure
+- [App Profiles]({NN}-apps/) — per-app entry points, state management, routing
+- [Shared Code]({NN}-shared-code.md) — detailed contents of shared packages listed above
+- [Gotchas]({NN}-gotchas.md) — anti-patterns and pitfalls found in this repo structure
 ```

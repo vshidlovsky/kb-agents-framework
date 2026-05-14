@@ -74,7 +74,7 @@
 
 ## See Also
 
-- [App Profiles](02-apps/) — per-app flag provider setup
+- [App Profiles]({NN}-apps/) — per-app flag provider setup
 - [Screen Inventory]({NN}-screen-inventory.md) — screens referenced in Consumed By column
 - [Project Conventions]({NN}-project-conventions.md) — flag naming convention (if documented)
 ```

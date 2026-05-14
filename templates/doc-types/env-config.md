@@ -75,7 +75,7 @@
 
 ## See Also
 
-- [App Profiles](02-apps/) — per-app environment setup
+- [App Profiles]({NN}-apps/) — per-app environment setup
 - [Service Map]({NN}-service-map.md) — which services consume which variables
 - [Database Schema]({NN}-database-schema.md) — database connection config variables
 ```

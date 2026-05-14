@@ -88,8 +88,8 @@ Key registrations:
 
 ## See Also
 
-- [Repo Map](../01-repo-map.md) — package inventory and dependency graph
-- [Shared Code](../03-shared-code.md) — shared packages this app imports
-- [Screen Inventory](../05-screen-inventory.md) — full screen list with routes (if generated)
+- [Repo Map](../{NN}-repo-map.md) — package inventory and dependency graph
+- [Shared Code](../{NN}-shared-code.md) — shared packages this app imports
+- [Screen Inventory](../{NN}-screen-inventory.md) — full screen list with routes (if generated)
 - [API Registry](../{NN}-api-registry.md) — endpoints this app calls (if generated)
 ```

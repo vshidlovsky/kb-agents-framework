@@ -14,7 +14,7 @@ Read `.claude/kb-context.md`. Extract:
 - Scoping rules (include/exclude directories)
 - Enabled packs
 
-Read `docs/project-kb/.manifest.json`. Extract the full document map:
+Read `docs/project-kb/.manifest.json` (schema: `agents/manifest-schema.md`). Extract the full document map:
 - For each doc: file path, `commitSha` (last generation commit), `scopeGlobs`, `lineCount`, `freshness`, `status`
 
 If no manifest exists, STOP: "No manifest found. Run `/generate-kb` first to create the knowledge base."

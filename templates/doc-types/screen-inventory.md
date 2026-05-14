@@ -62,5 +62,5 @@
 
 - [Navigation Graph]({NN}-navigation-graph.md) — screen-to-screen transitions
 - [Dependency Index]({NN}-dependency-index.md) — which managers/services feed which screens
-- [App Profiles](02-apps/) — per-app routing overview
+- [App Profiles]({NN}-apps/) — per-app routing overview
 ```
