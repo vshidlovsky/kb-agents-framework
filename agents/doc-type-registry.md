@@ -1,6 +1,6 @@
 # Doc Type Registry
 
-Reference file read by the KB Generator agent. Defines all 14 built-in doc type packs and the format for custom packs.
+Reference file read by the KB Generator agent. Defines all 15 built-in doc type packs and the format for custom packs.
 
 For each pack: what to extract, where to look, what to produce, and how it connects to other docs.
 
@@ -36,7 +36,11 @@ Custom packs follow the same structure — see the Custom Pack Format section at
 4. Build adjacency list: package → [depends on]
 5. Identify hub packages: depended on by >50% of other packages
 6. Read build tool configs for versions (Flutter SDK, Node, Java, Go, Rust, Python)
-7. Generate Mermaid dependency diagram from adjacency list (packages as nodes, internal deps as directed edges)
+7. For each package, extract a one-line "Key Observations" note — dependency count, notable features, version info from pubspec
+8. Inventory scripts directory (if present): list script files with one-line purpose
+9. Check for workspace field in root pubspec.yaml (Dart workspaces) — note entry count
+10. Check for shared_dependencies.yaml or similar shared config files
+11. Generate Mermaid dependency diagram from adjacency list (packages as nodes, internal deps as directed edges)
 
 **Scope globs:**
 
@@ -64,12 +68,14 @@ pnpm-workspace.yaml
 
 2. Package inventory table:
 
-| Package | Path | Description | Depended-On-By |
-|---------|------|-------------|----------------|
-| `core` | `packages/core` | Shared domain models | 12 |
+| Package | Path | Description | Key Observations | Depended-On-By |
+|---------|------|-------------|------------------|----------------|
+| `core` | `packages/core` | Shared domain models | 23 deps, exports domain types | 12 |
 
 3. Hub packages callout (>50% dependents)
 4. Mermaid dependency diagram
+
+> Package inventory table MUST include a "Key Observations" column. This is a hot-priority hub document — density matters more than brevity here.
 
 **Cross-references:** Referenced by app-profiles, shared-code, gotchas
 
@@ -170,6 +176,8 @@ Key exports (ranked by usage):
 6. Detect co-change pairs: `git log --format= --name-only` on last 500 commits, find files that always change together without import links (hidden coupling)
 7. Check for misleading names: packages/classes whose name suggests one thing but code does another
 
+> When citing files as evidence for a gotcha, include the line number where the evidence is found (e.g., `pubspec.yaml:135`). Use `grep -n` instead of `grep` for all evidence-gathering commands. The citation field should be formatted as `path/to/file:line — evidence description`.
+
 **Scope globs:** All source directories (uses repo-map output as primary input)
 
 **Output format:**
@@ -185,6 +193,51 @@ Per-gotcha entries:
 ```
 
 **Cross-references:** References repo-map, shared-code
+
+---
+
+### canonical-examples
+
+> Template: `templates/doc-types/canonical-examples.md`
+> Load priority: **warm**
+
+Unlike auto-generated doc types, canonical examples follow a **human-confirmation pattern** (same as project-conventions): agents propose candidate patterns, users confirm each one before it enters the doc. This ensures the KB only recommends patterns the team actually endorses.
+
+**Extraction strategy:**
+
+1. Identify newest packages: use `git log --diff-filter=A --format=%ai --name-only` to find most recently added source files, then rank packages by recency of new file creation. Also flag packages with explicit "v2" or "new" naming.
+2. For each candidate package, find the cleanest feature module: look for highest test coverage (count test files relative to source files), most consistent naming patterns, and most complete file structure (barrel exports, dedicated model/service/state directories).
+3. Extract the structural pattern: how files are organized (directory layout), how state flows (creation → exposure → consumption), how API calls are wired (service → DTO → consumer), how tests are structured (setup → act → assert, mocking approach).
+4. Compare against older packages to identify what the newer approach does differently — this becomes the "anti-pattern to avoid" for each entry.
+5. Present each candidate pattern to user for confirmation (same human-gate as conventions). Only confirmed patterns enter the document.
+
+**Scope globs:** Broad — all source packages (uses repo-map output as primary input to identify packages)
+
+```
+apps/*/lib/**
+apps/*/src/**
+packages/*/lib/**
+packages/*/src/**
+modules/*/src/**
+libs/**
+```
+
+**Output format:**
+
+Per-pattern entries:
+
+```
+### CP-001: {Short title}
+
+**Source:** `{package}` — `{file path}`
+**Why canonical:** {one sentence}
+**Key structural elements:** {bullet list of what to replicate}
+**Anti-pattern to avoid:** {what the older approach looks like}
+```
+
+Plus a Patterns by Category summary table.
+
+**Cross-references:** References shared-code, project-conventions, gotchas
 
 ---
 
@@ -297,9 +350,11 @@ Per-flow transition tables:
 
 1. Find all HTTP service/client classes: grep for `@GET`, `@POST`, `@RestController`, `dio.get`, `fetch(`, `axios.`, `http.Client`, `HttpClient`
 2. For each service: extract method (GET/POST/PUT/DELETE), path, request body shape, response shape
-3. Trace to consumer classes: who calls this service method?
-4. Map to DTOs: what data classes are used for request/response?
-5. Group by service/domain
+3. For each endpoint, also extract the response type/shape: look for return type annotations, `fromJson` calls, or response mapper usage. Document the response DTO or shape in the Response DTO column. If the response is a generic Result<T, E> wrapper, note the inner type T.
+4. Trace to consumer classes: who calls this service method?
+5. Map to DTOs: what data classes are used for request/response?
+6. Document the HTTP stack architecture: how requests flow from service class through middleware/interceptors to the network layer. This is high-value context for agents writing new API calls.
+7. Group by service/domain
 
 **Scope globs:**
 

@@ -63,6 +63,7 @@
 - [x] app-profiles — Per-app entry points, state management, routing, DI, environment config
 - [x] shared-code — Shared packages/modules: directory structure, key exports, heavily-used APIs
 - [x] gotchas — Anti-patterns, pitfalls, dead code, version confusion, naming collisions
+- [ ] canonical-examples — Best-practice implementation patterns from the newest/cleanest code
 
 #### Tier 2: Frontend/Mobile
 
@@ -151,7 +152,7 @@ Custom doc type pack files (one path per line, or "none"):
 | Priority | Doc Types |
 |----------|-----------|
 | hot (always load) | repo-map, app-profiles, gotchas |
-| warm (load when touching related files) | screen-inventory, api-registry, dependency-index, project-conventions |
+| warm (load when touching related files) | screen-inventory, api-registry, dependency-index, project-conventions, canonical-examples |
 | cold (load on demand) | l10n-registry, env-config, database-schema, service-map, feature-flags |
 
 ### Staleness Hook

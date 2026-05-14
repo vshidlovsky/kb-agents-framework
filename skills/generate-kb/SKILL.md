@@ -57,11 +57,15 @@ Generate the foundational docs that all other tiers depend on. Spawn the kb-gene
    - `{sequence_number}` = `01`
    - `{is_custom}` = `false`
 
+   After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
+
 2. **app-profiles** (sequence: `02`)
    Spawn Agent using `.claude/agents/kb-generator.md`:
    - `{doc_type}` = `app-profiles`
    - `{sequence_number}` = `02`
    - `{is_custom}` = `false`
+
+   After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
 
 3. **shared-code** (sequence: `03`)
    Spawn Agent using `.claude/agents/kb-generator.md`:
@@ -69,11 +73,15 @@ Generate the foundational docs that all other tiers depend on. Spawn the kb-gene
    - `{sequence_number}` = `03`
    - `{is_custom}` = `false`
 
+   After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
+
 4. **gotchas** (sequence: `04`)
    Spawn Agent using `.claude/agents/kb-generator.md`:
    - `{doc_type}` = `gotchas`
    - `{sequence_number}` = `04`
    - `{is_custom}` = `false`
+
+   After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
 
 After all Tier 1 docs are generated, present a summary:
 
@@ -112,6 +120,8 @@ Spawn Agent using `.claude/agents/kb-generator.md`:
   - {is_custom} = {true if custom pack, false if built-in}
 ```
 
+After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
+
 **Parallelization note**: Tier 2/3 packs within the same tier can be generated in parallel — they don't depend on each other. Custom packs may depend on built-in outputs, so generate them after built-in Tier 2/3 packs.
 
 After all are generated, present summary:
@@ -136,6 +146,8 @@ If feedback is given, regenerate affected doc(s). Repeat until user says "contin
 Generate enabled Tier 4 packs **except** project-conventions (which has its own phase).
 
 For each enabled Tier 4 pack (feature-flags, l10n-registry, env-config), spawn the kb-generator agent with the next sequence number.
+
+After each doc generation, verify `docs/project-kb/.manifest.json` was updated with the new document entry. If not, read the generated doc's line count and update the manifest manually.
 
 Present summary after generation.
 
@@ -188,6 +200,8 @@ If "fix" is chosen, regenerate failing docs and re-validate.
 
 ## Phase 6: Cross-Reference Pass
 
+This phase is MANDATORY — do not skip it. Unresolved `{NN}-` placeholders in generated docs break markdown links and confuse agents.
+
 Resolve all `{NN}-` placeholder links and verify cross-references.
 
 ### Step 1: Build File Map
@@ -227,6 +241,10 @@ For each cross-reference A → B, check that B → A also exists. Add missing ba
 {K} dangling references removed (doc not generated).
 {J} docs updated.
 ```
+
+### Step 5: Verify No Unresolved Placeholders
+
+After resolution, grep all docs in `docs/project-kb/` for remaining `{NN}-` patterns. If any remain, resolve them or remove the broken link. Report count of unresolved placeholders.
 
 ### Gate 6: User confirms final KB
 

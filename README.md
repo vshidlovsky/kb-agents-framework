@@ -48,15 +48,15 @@ Incremental refresh via `/refresh-kb` — only regenerates docs whose source fil
 - **Non-obvious only** — don't document what one grep can find; KB value is relationships and reverse lookups
 - **Incremental refresh** — tracks which source files each document depends on via scope globs and commit SHAs
 - **Citation-grounded** — every claim cites a real file path; the validator checks that every cited path exists
-- **Pack-based** — 14 built-in doc type packs as a seed list + open-ended discovery for custom packs
+- **Pack-based** — 15 built-in doc type packs as a seed list + open-ended discovery for custom packs
 
 ## Doc Type Packs
 
-### Built-in (14 packs in 4 tiers)
+### Built-in (15 packs in 4 tiers)
 
 | Tier | Packs |
 |------|-------|
-| **Universal** | repo-map, app-profiles, shared-code, gotchas |
+| **Universal** | repo-map, app-profiles, shared-code, gotchas, canonical-examples |
 | **Frontend/Mobile** | screen-inventory, navigation-graph, dependency-index |
 | **Backend/API** | api-registry, database-schema, service-map |
 | **Cross-Cutting** | project-conventions, feature-flags, l10n-registry, env-config |
@@ -74,7 +74,7 @@ kb-agents-framework/
 │   ├── kb-generator.md            # Document generation agent
 │   ├── kb-validator.md            # Accuracy validation agent
 │   ├── kb-refresher.md            # Incremental refresh agent
-│   ├── doc-type-registry.md       # All 14 doc type packs defined
+│   ├── doc-type-registry.md       # All 15 doc type packs defined
 │   ├── quality-patterns.md        # Anti-patterns and validation checks
 │   └── manifest-schema.md         # Canonical .manifest.json schema
 ├── skills/
@@ -88,6 +88,7 @@ kb-agents-framework/
 │       ├── app-profile.md
 │       ├── shared-code.md
 │       ├── gotchas.md
+│       ├── canonical-examples.md
 │       ├── screen-inventory.md    # Tier 2
 │       ├── navigation-graph.md
 │       ├── dependency-index.md
@@ -108,7 +109,7 @@ kb-agents-framework/
 
 ## Status
 
-**Phase 5: Polish** — complete. All 4 agents, both skills, all 14 templates, manifest schema, and cross-reference resolution are built. See [docs/architecture.md](docs/architecture.md) for the full design.
+**Phase 5: Polish** — complete. All 4 agents, both skills, all 15 templates, manifest schema, and cross-reference resolution are built. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ### Implementation Phases
 
