@@ -14,9 +14,11 @@ Today, agents discover this by grep-searching and tracing imports — every time
 
 The ecosystem has converged on two categories, neither of which covers the full problem:
 
-**Context file generators** (Repowise, Repomix, RepoAgent) auto-generate documentation from code. But academic research ("Evaluating AGENTS.md", Feb 2026) found that auto-generated comprehensive context files **tend to reduce task success rates** while increasing inference cost by 20%+. The problem: they produce verbose dumps that drown agents in marginally relevant information.
+**Context file generators** (Repowise, Repomix, RepoAgent) auto-generate documentation from code. But ETH Zurich research ("Evaluating AGENTS.md", Feb 2026) found that auto-generated comprehensive context files **reduce task success rates by ~3%** while increasing inference cost by 20%+. The problem: they produce verbose dumps that drown agents in marginally relevant information. Human-curated files improve success by ~4%, but only when kept minimal.
 
 **Context file formats** (AGENTS.md, CLAUDE.md, Cursor Rules, Windsurf Rules) define where to put instructions. They say nothing about what a knowledge base should contain, how to generate it, or how to keep it current.
+
+**Code intelligence engines** (GitNexus, Sourcegraph, CodeGraphContext) build knowledge graphs with MCP tools for live queries. These are powerful but require infrastructure (graph databases, indexing pipelines) and deliver context via API calls rather than pre-indexed documents. They solve "query the codebase" but not "give agents a curated lay of the land before they start working."
 
 The gap is a framework that covers the full lifecycle: **what to generate → how to curate it → how to keep it fresh** — with the insight that curated and minimal beats comprehensive and auto-generated.
 
@@ -59,13 +61,25 @@ Each document targets 200–700 lines. Documents exceeding 1,000 lines trigger a
 
 Every claim in a generated document must cite a real file path. No inferences, no guesses. The validator agent checks that every cited path exists on disk. This makes the KB trustworthy — agents can follow citations to source code without risk of hallucinated references.
 
+### Non-obvious only
+
+Don't document what the code already says. Agents can read a `package.json` themselves — what they can't do cheaply is trace which 47 screens import `WalletManager` or which endpoints return `TransferDTO`. The KB captures relationships, reverse lookups, and cross-cutting concerns that are expensive to derive from source but trivial to consult from a table. If removing an entry wouldn't cost the agent more than one grep, it doesn't belong in the KB. (Informed by ETH Zurich's finding that redundant context increases inference cost without improving task success.)
+
 ---
 
-## 3. Document Types
+## 3. Document Type Packs
 
-Organized into four tiers. Each project enables the types it needs via checkboxes in `kb-context.md`.
+Following the same pack architecture as the PRD framework's section packs. Each doc type is a self-contained pack with extraction strategy, output template, scope globs, and quality checks. Packs come in two flavors:
 
-### Tier 1: Universal (any project type)
+**Built-in packs** — 14 doc type packs shipped with the framework, organized into four tiers. These are the seed list — the discovery agent knows about them and recommends which to enable based on what it finds in the project.
+
+**Custom packs** — doc types the discovery agent proposes after scanning the project, or that users define manually. If the agent finds something worth documenting that doesn't fit any built-in pack (e.g., a complex build pipeline, a mono-repo workspace layout, a domain-specific state machine, a test fixture registry), it proposes a custom pack with a name, description, scope globs, and extraction strategy. Custom packs follow the same format as built-in packs and are generated, validated, and refreshed identically.
+
+The built-in list is a floor, not a ceiling. The discovery agent's real job is to understand the project and propose whatever KB documents would help agents work in it.
+
+### Built-in Packs
+
+#### Tier 1: Universal (any project type)
 
 | Doc Type | What It Captures | Reference Equivalent |
 |----------|-----------------|---------------------|
@@ -76,7 +90,7 @@ Organized into four tiers. Each project enables the types it needs via checkboxe
 
 Every project gets Tier 1. These four documents form the foundation that higher-tier docs build on.
 
-### Tier 2: Frontend/Mobile (UI-bearing projects)
+#### Tier 2: Frontend/Mobile (UI-bearing projects)
 
 | Doc Type | What It Captures | Reference Equivalent |
 |----------|-----------------|---------------------|
@@ -86,7 +100,7 @@ Every project gets Tier 1. These four documents form the foundation that higher-
 
 Recommended for: Flutter, React Native, Swift, Kotlin mobile apps; React, Vue, Angular, Next.js web apps.
 
-### Tier 3: Backend/API (services, APIs, data layers)
+#### Tier 3: Backend/API (services, APIs, data layers)
 
 | Doc Type | What It Captures | Reference Equivalent |
 |----------|-----------------|---------------------|
@@ -96,11 +110,11 @@ Recommended for: Flutter, React Native, Swift, Kotlin mobile apps; React, Vue, A
 
 Recommended for: Spring Boot, Express, NestJS, Django, FastAPI, Go services. Also for frontend projects that consume APIs (API Registry is useful for both).
 
-### Tier 3 note: API Registry applies broadly
+#### Tier 3 note: API Registry applies broadly
 
 The API Registry is listed under Tier 3 but is valuable for any project that consumes HTTP APIs — including mobile and web apps. The setup agent recommends it whenever HTTP client code or API documentation is detected, regardless of project type.
 
-### Tier 4: Cross-Cutting (configuration, i18n, flags, conventions)
+#### Tier 4: Cross-Cutting (configuration, i18n, flags, conventions)
 
 | Doc Type | What It Captures | Reference Equivalent |
 |----------|-----------------|---------------------|
@@ -110,6 +124,45 @@ The API Registry is listed under Tier 3 but is valuable for any project that con
 | **Environment Config** | Environment variables, config files, secrets references, per-environment differences | (new) |
 
 Recommended based on detection: feature flag enums/configs → Feature Flags; ARB/JSON/PO translation files → L10n Registry; .env files or config classes → Environment Config. Project Conventions is always recommended — PRDs reference it to name events, flags, routes, and keys correctly.
+
+### Custom Packs
+
+The discovery agent proposes custom doc type packs when it finds project structures worth documenting that don't fit any built-in pack. Examples of what the agent might discover and propose:
+
+| Discovery | Proposed Custom Pack |
+|-----------|---------------------|
+| Complex multi-stage CI/CD pipeline | `build-pipeline` — stages, triggers, artifact flow |
+| Domain-specific state machines (payment flows, order lifecycle) | `state-machines` — states, transitions, guard conditions per entity |
+| Monorepo workspace orchestration (Nx, Turborepo, Melos) | `workspace-graph` — task dependencies, build order, cache keys |
+| Extensive test fixture/factory system | `test-fixtures` — factory → model mapping, shared seed data |
+| Custom code generation (build_runner, OpenAPI, protobuf) | `codegen-registry` — generator → input → output → regeneration commands |
+| GraphQL schema with resolvers | `graphql-registry` — types, queries, mutations, resolver files |
+
+Custom packs follow the same structure as built-in packs:
+
+```markdown
+# Custom Doc Type Pack: {name}
+
+## Description
+What this document captures and why it's valuable for agents.
+
+## Extraction Strategy
+How to find and extract the information from the codebase.
+
+## Scope Globs
+Which files/directories to scan.
+
+## Output Template
+Table schemas and section structure for the generated document.
+
+## Cross-References
+Which other docs this one links to/from.
+
+## Quality Checks
+Pack-specific validation rules.
+```
+
+Custom pack definitions are saved to `templates/doc-types/custom/` in the target project and registered in `kb-context.md` under Custom Doc Type Packs. They persist across refreshes — the refresher tracks their scope globs in the manifest just like built-in packs.
 
 ### Project Conventions vs Coding Conventions
 
@@ -142,12 +195,12 @@ Four executable agents plus two reference files.
 
 | File | Role |
 |------|------|
-| `agents/doc-type-registry.md` | Defines all 13 doc types: extraction strategy, scope globs, output template reference, cross-references, quality checks |
+| `agents/doc-type-registry.md` | Defines all 14 built-in doc type packs: extraction strategy, scope globs, output template reference, cross-references, quality checks. Custom packs extend this at runtime. |
 | `agents/quality-patterns.md` | Quality anti-patterns (verbose dumps, ungrounded claims, convention leakage) and validation checks. Read by generator and validator. |
 
-### Why one generator, not thirteen
+### Why one generator, not one per pack
 
-The generator is a single agent parameterized by the doc type registry, not one agent per doc type. The extraction logic varies by type, but the surrounding workflow (read context → read registry entry → scan code → apply template → write output → update manifest → commit) is identical. This avoids 13 near-duplicate agent files and makes adding new doc types trivial: add a registry entry and a template.
+The generator is a single agent parameterized by the doc type pack, not one agent per doc type. The extraction logic varies by type, but the surrounding workflow (read context → read pack definition → scan code → apply template → write output → update manifest → commit) is identical. This avoids duplicate agent files and makes adding new doc types trivial — whether built-in or custom, the generator treats every pack the same way. Custom packs discovered by the setup agent work without any framework changes.
 
 ### Agent detail: KB Setup
 
@@ -161,11 +214,14 @@ Mirrors `prd-agents-framework/agents/project-setup.md`.
 | 3 | Detect monorepo vs single-app vs multi-service |
 | 4 | Identify apps/services (count entry points, app manifests) |
 | 5 | Detect existing knowledge bases (`docs/project-kb/`, `docs/kb/`, embedded CLAUDE.md architecture) |
-| 6 | Recommend doc types by tier based on project type |
-| 7 | Ask user: scope (which apps/services if monorepo), custom doc types, conventions doc path |
-| 8 | Draft `kb-context.md` with all fields filled, `[TODO]` for unknowns |
-| 9 | Create `docs/project-kb/` directory and `docs/project-kb/.manifest.json` |
-| 10 | Present summary, user reviews and confirms |
+| 6 | **Built-in pack matching**: Check each built-in doc type pack against the project. Recommend enabling packs where the project has matching structures (Flutter pages → screen-inventory, HTTP clients → api-registry, .env files → env-config, etc.) |
+| 7 | **Open-ended discovery**: Scan beyond the built-in list. Look for project structures that would be valuable for agents to know about but aren't covered by any built-in pack. Propose custom doc type packs with name, description, extraction strategy, and scope globs. Examples: CI/CD pipelines, state machines, codegen registries, workspace orchestration graphs. |
+| 8 | **Present full pack proposal**: Show the user all recommended packs — built-in (with checkboxes, pre-checked for matches) + custom (each with description and rationale). User confirms, edits, or skips each. Same pattern as PRD section packs. |
+| 9 | Ask user: scope (which apps/services if monorepo), conventions doc path |
+| 10 | Draft `kb-context.md` with all fields filled, `[TODO]` for unknowns |
+| 11 | Save custom pack definitions to `templates/doc-types/custom/` |
+| 12 | Create `docs/project-kb/` directory and `docs/project-kb/.manifest.json` |
+| 13 | Present summary, user reviews and confirms |
 
 ### Agent detail: KB Generator
 
@@ -174,7 +230,7 @@ The core extraction agent. Invoked per doc type (or batch of types) by the skill
 | Step | Action |
 |------|--------|
 | 0 | Read `.claude/kb-context.md` for project config, scope, exclusions |
-| 1 | Read the doc type registry entry for the requested doc type |
+| 1 | Read the doc type pack definition: built-in from registry, or custom from `docs/kb-doc-templates/custom/` |
 | 2 | Read `docs/project-kb/.manifest.json` to check what already exists |
 | 3 | Capture HEAD commit SHA for file reference grounding |
 | 4 | Execute the extraction strategy from the registry (scan directories, read manifests, trace imports, build tables) |
@@ -211,14 +267,17 @@ Incremental update agent. Detects what changed and regenerates only stale docs.
 | 0 | Read `.claude/kb-context.md` and `docs/project-kb/.manifest.json` |
 | 1 | `git diff --name-only {last_commit_sha}..HEAD -- {source_dirs}` |
 | 2 | Map changed files → affected doc types using scope globs from manifest |
-| 3 | For each stale doc: determine if full regeneration or targeted patch |
-|   | — <5 affected files → attempt targeted patch (update specific rows/sections) |
-|   | — >=5 affected files → full regeneration of that doc |
-| 4 | Invoke kb-generator for each doc needing regeneration |
-| 5 | Run kb-validator on all refreshed docs |
-| 6 | Update manifest with new timestamps and commit SHAs |
-| 7 | Present summary: refreshed, untouched, new validation failures |
-| 8 | Commit: `docs(kb): refresh {list of refreshed docs}` |
+| 3 | Compute freshness scores: `(unchanged scope files) / (total scope files)` per doc |
+| 4 | **Hotspot analysis**: `git log --format= --name-only` on last 500 commits to identify high-churn files. Docs covering hotspot files get priority — they go stale faster. |
+| 5 | For each stale doc: determine if full regeneration or targeted patch |
+|   | — freshness ≥ 0.9 → attempt targeted patch (update specific rows/sections) |
+|   | — freshness < 0.9 → full regeneration of that doc |
+| 6 | Invoke kb-generator for each doc needing regeneration |
+| 7 | Run kb-validator on all refreshed docs |
+| 8 | Update manifest: new timestamps, commit SHAs, freshness scores, token estimates |
+| 9 | Insert staleness warning headers into docs with freshness < 0.8 that weren't refreshed |
+| 10 | Present summary: refreshed, untouched, new validation failures, hotspot docs flagged |
+| 11 | Commit: `docs(kb): refresh {list of refreshed docs}` |
 
 ---
 
@@ -234,19 +293,22 @@ Two skills orchestrate the agents with human gates between phases.
     ├── Pre-flight
     │   Verify kb-context.md exists and is filled
     │
-    ├── Phase 0: Scope Confirmation
+    ├── Phase 0: Discovery & Scope
     │   If monorepo: confirm which apps/services to cover
-    │   Confirm which doc types to generate
-    │   🔵 Gate 0: User confirms scope
+    │   Match project against built-in packs (pre-check matches)
+    │   Open-ended discovery: scan for structures not covered by built-in packs
+    │   Propose custom packs with name, description, rationale
+    │   Present full pack list: built-in (checkboxes) + custom (each with description)
+    │   🔵 Gate 0: User confirms which packs to enable (built-in + custom)
     │
     ├── Phase 1: Tier 1 Generation (universal docs)
     │   Spawn kb-generator for: repo-map, app-profiles, shared-code, gotchas
     │   🔵 Gate 1: User reviews Tier 1 docs
     │   "These are the factual foundation. Review for accuracy."
     │
-    ├── Phase 2: Tier 2/3 Generation (project-specific docs)
-    │   Spawn kb-generator for enabled Tier 2/3 doc types
-    │   🔵 Gate 2: User reviews Tier 2/3 docs
+    ├── Phase 2: Tier 2/3 + Custom Pack Generation (project-specific docs)
+    │   Spawn kb-generator for enabled Tier 2/3 doc types + custom packs
+    │   🔵 Gate 2: User reviews Tier 2/3 + custom docs
     │
     ├── Phase 3: Tier 4 Generation (cross-cutting docs, except conventions)
     │   Spawn kb-generator for enabled Tier 4 doc types (feature-flags, l10n, env-config)
@@ -295,11 +357,13 @@ Two skills orchestrate the agents with human gates between phases.
     │   Spawn kb-generator for each doc to refresh
     │   🔵 Gate 2: User reviews refreshed docs
     │
-    ├── Phase 3: Convention Check
+    ├── Phase 3: Convention Check + Pack Discovery
     │   Scan refreshed docs + changed code for new naming patterns
     │   Compare against existing conventions in project-conventions.md
     │   If new patterns found: propose each individually
-    │   🔵 Gate 3: User confirms, edits, or skips new conventions
+    │   Also check: do changed files reveal project structures that
+    │     warrant a new custom pack not yet in the KB?
+    │   🔵 Gate 3: User confirms new conventions + any new custom packs
     │
     ├── Phase 4: Validation
     │   Spawn kb-validator on refreshed docs
@@ -336,14 +400,35 @@ Equivalent of `prd-agents-framework/project-context.md`. Copied into target proj
 ### Apps/Services in Scope
 - Table: app name → path → include [x]/[ ]
 
-### Enabled Doc Types
-- Tier 1 (Universal): [x] repo-map, [x] app-profiles, [x] shared-code, [x] gotchas
-- Tier 2 (Frontend/Mobile): [ ] screen-inventory, [ ] navigation-graph, [ ] dependency-index
-- Tier 3 (Backend/API): [ ] api-registry, [ ] database-schema, [ ] service-map
-- Tier 4 (Cross-Cutting): [x] project-conventions, [ ] feature-flags, [ ] l10n-registry, [ ] env-config
+### Included Doc Type Packs
 
-### Custom Doc Types
-- Path per custom type, or "none"
+> Built-in packs shipped with the framework. The setup agent pre-checks packs
+> that match the project's structure. Mirrors PRD framework's section pack pattern.
+
+- [x] repo-map — Package/module inventory, internal dependency graph, tooling versions
+- [x] app-profiles — Per-app entry points, state management, routing, DI, environment config
+- [x] shared-code — Shared packages/modules: directory structure, key exports, heavily-used APIs
+- [x] gotchas — Anti-patterns, pitfalls, dead code, version confusion, naming collisions
+- [ ] screen-inventory — Screen name → route → file path → package ownership (frontend/mobile)
+- [ ] navigation-graph — Screen-to-screen transition tables (frontend/mobile)
+- [ ] dependency-index — Class → screens reverse lookup (frontend/mobile)
+- [ ] api-registry — Endpoint → method → service file → DTOs → consumers (backend, or any API consumer)
+- [ ] database-schema — Tables, relationships, migration history, ORM mapping (backend)
+- [ ] service-map — Service-to-service dependencies, protocols, retry patterns (backend)
+- [x] project-conventions — Naming patterns for events, flags, routes, l10n keys, log formats
+- [ ] feature-flags — Flag name → key → default → what it gates → consumed by
+- [ ] l10n-registry — Prefix → feature area → package → key count → example keys
+- [ ] env-config — Environment variables, config files, secrets references, per-env differences
+
+### Custom Doc Type Packs
+
+> Doc types discovered by the setup agent or defined by the user. Each custom pack
+> is a markdown file following the same format as the built-in packs.
+> The setup agent proposes custom packs when it finds project structures worth
+> documenting that don't fit any built-in pack.
+
+Custom doc type pack files (one path per line, or "none"):
+- none
 
 ### Scoping Rules
 - Include: [directories to scan]
@@ -353,6 +438,17 @@ Equivalent of `prd-agents-framework/project-context.md`. Copied into target proj
 ### Conventions Reference
 - Conventions doc path (or "none") — cross-referenced, not duplicated
 - Canonical examples doc path (or "none")
+
+### Freshness & Loading
+
+#### Load Priority Defaults
+- hot (always load): repo-map, app-profiles, gotchas
+- warm (load when touching related files): screen-inventory, api-registry, dependency-index, project-conventions
+- cold (load on demand): l10n-registry, env-config, database-schema, service-map, feature-flags
+
+#### Staleness Hook
+- Enable pre-commit hook: [x] yes / [ ] no
+- Hook warns when committing files that match a stale doc's scope globs
 
 ## Integration
 
@@ -367,7 +463,7 @@ Tracks per-document generation metadata for incremental refresh.
 
 ```json
 {
-  "version": 1,
+  "version": 2,
   "projectName": "project-name",
   "lastFullGeneration": "2026-05-12T10:30:00Z",
   "lastRefresh": "2026-05-12T14:00:00Z",
@@ -378,14 +474,37 @@ Tracks per-document generation metadata for incremental refresh.
       "commitSha": "abc1234",
       "sourceFileCount": 120,
       "lineCount": 342,
+      "tokenEstimate": 2800,
+      "freshness": 1.0,
+      "loadPriority": "hot",
       "status": "current",
       "scopeGlobs": ["**/pubspec.yaml", "**/package.json", "melos.yaml"]
+    },
+    "api-registry": {
+      "file": "08-api-registry.md",
+      "generatedAt": "2026-05-10T09:00:00Z",
+      "commitSha": "def5678",
+      "sourceFileCount": 45,
+      "lineCount": 1140,
+      "tokenEstimate": 9200,
+      "freshness": 0.72,
+      "loadPriority": "warm",
+      "status": "stale",
+      "scopeGlobs": ["**/services/**", "**/api/**", "**/clients/**"],
+      "staleSince": "2026-05-11T15:00:00Z",
+      "staleFiles": ["lib/services/transfer_service.dart", "lib/api/auth_client.dart"]
     }
   }
 }
 ```
 
-The `scopeGlobs` field is critical: it tells the refresher which files to watch for changes per doc type. When `git diff` returns files matching a doc's scope globs, that doc is marked stale.
+**Key fields:**
+
+- **`scopeGlobs`** — tells the refresher which files to watch. When `git diff` returns files matching a doc's scope globs, that doc is marked stale.
+- **`freshness`** — 0.0 to 1.0 score. Calculated as `(unchanged scope files) / (total scope files)` since last generation. 1.0 = fully current, 0.0 = every scope file changed. More nuanced than binary current/stale — a doc at 0.95 probably just needs a patch, while 0.3 needs full regeneration. Inspired by Repowise's freshness scoring.
+- **`loadPriority`** — `hot` (always load before any task), `warm` (load when working in related files), `cold` (load on demand). Inspired by the Codified Context paper's three-tier knowledge hierarchy. Agents use this to decide what to read first without consuming their full context window.
+- **`tokenEstimate`** — approximate token count for the doc. Helps agents budget their context window. Calculated at generation time using a simple `lines × 8` heuristic (refinable per project).
+- **`staleSince`** / **`staleFiles`** — when the doc became stale and which specific files triggered it. Helps the refresher decide between targeted patch and full regeneration.
 
 ---
 
@@ -404,6 +523,7 @@ Defined in `agents/quality-patterns.md`, enforced by the generator and validator
 | **Coding convention leakage** | Documenting HOW to structure code (state management, DI, file organization). KB docs document naming patterns and what exists, not implementation patterns. |
 | **Redundancy across docs** | Repeating information in multiple docs. Use cross-references. |
 | **Missing cross-reference** | A screen inventory entry without a nav graph link, or API registry entry without a dependency index link. |
+| **Documenting the obvious** | Including information agents can derive from a single file read or grep. KB value comes from relationships and reverse lookups, not restating what the code says. (ETH Zurich: redundant context increases cost without improving success.) |
 
 ### Validation checks
 
@@ -420,9 +540,11 @@ Defined in `agents/quality-patterns.md`, enforced by the generator and validator
 
 Every generated document follows these rules:
 
-- Header line: `> Generated {date} at commit {short_sha}. Every claim cites real files.`
+- Header line: `> Generated {date} at commit {short_sha}. Freshness: {score}. Every claim cites real files.`
+- Staleness warning (auto-inserted by refresher when freshness < 0.8): `> ⚠ STALE since {date} — {N} scope files changed. Run /refresh-kb to update.`
 - Tables for inventories and registries, not prose
 - **Local file paths, not permalinks.** Agents consume paths via the Read tool. Permalinks add noise to dense tables. The commit SHA in the header and manifest provides traceability. Staleness is handled by the refresh pipeline regenerating docs, not by permalink archaeology. (This differs from the PRD researcher, which uses permalinks because research docs are read weeks later when code may have changed.)
+- Loading hint line: `> Load priority: {hot|warm|cold}. Load when touching: {scope globs summary}.`
 - "See also" cross-references to related docs
 - No verbatim code dumps — summarize structure, cite paths
 
@@ -459,7 +581,7 @@ kb-agents-framework/
 │   └── refresh-kb/
 │       └── SKILL.md               # Incremental refresh pipeline
 ├── templates/
-│   └── doc-types/                 # Output templates per doc type
+│   └── doc-types/                 # Built-in doc type pack templates
 │       ├── repo-map.md
 │       ├── app-profile.md
 │       ├── shared-code.md
@@ -474,6 +596,7 @@ kb-agents-framework/
 │       ├── feature-flags.md
 │       ├── l10n-registry.md
 │       └── env-config.md
+│       # Custom packs are created per-project at install time
 ├── kb-context.md                  # Config template (copied to target project)
 ├── docs/
 │   └── architecture.md            # This document
@@ -513,10 +636,12 @@ target-project/
 └── docs/
     └── kb-doc-templates/          # Output templates (copied, customizable)
         ├── repo-map.md
-        └── ...
+        ├── ...                    # other built-in pack templates
+        └── custom/                # Custom pack definitions (created by setup agent)
+            └── {custom-pack-name}.md
 ```
 
-Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) because they are project artifacts that teams may customize.
+Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) because they are project artifacts that teams may customize. Custom packs discovered by the setup agent are saved to the `custom/` subdirectory and registered in `kb-context.md` under Custom Doc Type Packs.
 
 ---
 
@@ -527,7 +652,7 @@ Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) becau
 | Priority | File | Purpose |
 |----------|------|---------|
 | 1 | `kb-context.md` | Configuration template |
-| 2 | `agents/doc-type-registry.md` | All 14 doc types defined |
+| 2 | `agents/doc-type-registry.md` | All 14 built-in doc type packs defined + custom pack format spec |
 | 3 | `agents/quality-patterns.md` | Quality guardrails |
 | 4 | `templates/doc-types/repo-map.md` | First output template |
 | 5 | `agents/kb-generator.md` | Extraction agent (Tier 1 only) |
@@ -561,7 +686,7 @@ Doc type templates are copied to `docs/kb-doc-templates/` (not `.claude/`) becau
 
 | Priority | File | Purpose |
 |----------|------|---------|
-| 16 | Custom doc type support | Extension mechanism |
+| 16 | Custom pack discovery tuning | Improve setup agent's open-ended discovery heuristics |
 | 17 | Cross-reference pass logic | In generate-kb skill |
 | 18 | Integration test | Run against money-app-2 reference project |
 
@@ -609,17 +734,18 @@ These gaps are why human curation is a deliberate step in the pipeline, not an a
 
 ---
 
-## 12. Doc Type Registry — Detailed Entries
+## 12. Built-in Doc Type Packs — Detailed Entries
 
-Each entry defines what the generator extracts, how it extracts it, and what the output looks like.
+Each entry defines what the generator extracts, how it extracts it, and what the output looks like. Custom packs follow the same structure but are defined per-project by the setup agent's discovery pass.
 
 ### Tier 1
 
 #### repo-map
 
-- **Extraction**: Read root manifest → find all package manifests → parse names, paths, internal dependencies → build adjacency list → identify hub packages (depended on by >50% of others) → read build tool configs for versions
+- **Extraction**: Read root manifest → find all package manifests → parse names, paths, internal dependencies → build adjacency list → identify hub packages (depended on by >50% of others) → read build tool configs for versions → generate Mermaid dependency diagram from adjacency list
 - **Scope globs**: `**/pubspec.yaml`, `**/package.json`, `**/pom.xml`, `**/build.gradle*`, `**/go.mod`, `**/Cargo.toml`, `**/pyproject.toml`, `melos.yaml`, `nx.json`, `lerna.json`
-- **Output**: Tooling table (tool → version → config file) + Package inventory table (name → path → description → depended-on-by count) + Hub packages callout
+- **Output**: Tooling table (tool → version → config file) + Package inventory table (name → path → description → depended-on-by count) + Hub packages callout + Mermaid dependency diagram (auto-generated from the adjacency list, showing packages as nodes and internal dependencies as edges)
+- **Load priority**: `hot` — agents should always load the repo map first
 - **Cross-references**: Referenced by app-profiles, shared-code, gotchas
 
 #### app-profiles
@@ -631,14 +757,14 @@ Each entry defines what the generator extracts, how it extracts it, and what the
 
 #### shared-code
 
-- **Extraction**: For each shared package/module → read directory structure → parse barrel files for exports → count files per directory → identify key classes by import frequency across the project
+- **Extraction**: For each shared package/module → read directory structure → parse barrel files for exports → count files per directory → identify key classes by import frequency across the project → rank symbols by reference count (most-referenced first, inspired by Aider's PageRank approach)
 - **Scope globs**: `packages/*/lib/**`, `modules/*/src/**`, `libs/**` (varies by stack)
 - **Output**: Per-package sections with directory → contents tables + key exports list + heavily-used APIs
 - **Cross-references**: References repo-map for package list
 
 #### gotchas
 
-- **Extraction**: Scan for version confusion (v1/v2 directories, duplicate package names) → detect dead code (packages not imported by any app) → identify naming inconsistencies → find stale dependencies → check for orphaned packages in workspace config
+- **Extraction**: Scan for version confusion (v1/v2 directories, duplicate package names) → detect dead code (packages not imported by any app) → identify naming inconsistencies → find stale dependencies → check for orphaned packages in workspace config → detect co-change pairs from git history (files that always change together without import links — hidden coupling, inspired by Repowise's git analytics)
 - **Scope globs**: All source directories (uses repo-map output as input)
 - **Output**: Per-gotcha entries: Problem statement → Rule → Citation
 - **Cross-references**: References repo-map, shared-code
@@ -756,7 +882,8 @@ Unlike other doc types, project conventions are **not auto-generated and dumped*
 
 | Decision | Rationale | Alternative Considered |
 |----------|-----------|----------------------|
-| Single generator agent | Extraction varies by type but workflow is identical. Avoids 13 near-duplicate agents. | One agent per doc type — more isolated but massive duplication |
+| Single generator agent | Extraction varies by type but workflow is identical. Avoids duplicate agents. Custom packs work without framework changes. | One agent per doc type — more isolated but massive duplication |
+| Pack-based doc types | Built-in packs as seed list + open-ended discovery for custom packs. Mirrors PRD section packs. Doesn't limit the agent to a predefined menu. | Fixed doc type list — simpler but misses project-specific structures |
 | Tier-by-tier generation | Tier 1 informs later tiers. Human review between tiers catches scope issues early. | All-at-once — faster but riskier |
 | JSON manifest for refresh | Enables precise per-doc staleness detection via scope globs + commit SHA. | Git notes or branch-based tracking — more complex, less transparent |
 | Conventions excluded | Prescriptive rules require human judgment. Automated extraction produces verbose dumps. | Include conventions — would blur the factual/prescriptive boundary |
@@ -764,3 +891,58 @@ Unlike other doc types, project conventions are **not auto-generated and dumped*
 | Human curation gates | Research shows auto-generated docs hurt performance without curation. | Fully automated — faster but lower quality |
 | Cross-references over redundancy | Prevents staleness from duplicated data; keeps docs small. | Self-contained docs — easier to read in isolation but data rots |
 | Templates copied to target project | Teams may customize templates for project-specific needs. | Templates stay in framework — less flexibility |
+| Freshness scoring (0-1) | More granular than binary stale/current. Helps refresher decide patch vs full regen. Inspired by Repowise's per-page freshness. | Binary status — simpler but loses nuance for prioritization |
+| Load priority tags (hot/warm/cold) | Agents can't load the full KB in one context window. Tags tell them what to read first. Inspired by Codified Context paper's three-tier hierarchy. | Load everything — exceeds context budgets; let agent decide — wastes turns discovering relevance |
+| Token estimates per doc | Agents need to budget their context window. Token count alongside line count gives actionable sizing. | Line count only — doesn't reflect actual context cost |
+| Staleness warning headers | Auto-inserted in doc headers when manifest detects drift. Agents see warnings at read time without checking the manifest. | Manifest-only tracking — agents must check manifest before reading each doc |
+| Pre-commit staleness hook | Warns at commit time when changes affect KB docs. Catches drift early. Inspired by GitNexus's pre-commit hooks. | Manual refresh only — drift accumulates silently |
+| Non-obvious content only | Don't document what one grep can find. KB value comes from relationships and reverse lookups. ETH Zurich: redundant context increases cost without improving success. | Comprehensive documentation — produces verbose dumps that hurt agent performance |
+| Hotspot-aware refresh priority | High-churn files go stale faster. Docs covering hotspots should be refreshed first. Inspired by Repowise's git analytics layer. | FIFO refresh — treats all docs equally regardless of code velocity |
+
+---
+
+## 14. Research Basis
+
+Design decisions in this framework are informed by academic research, open-source tool analysis, and practitioner experience reports. This section documents the key sources and what was borrowed from each.
+
+### Academic Research
+
+**"Evaluating AGENTS.md" (ETH Zurich, Feb 2026)** — Tested context files across Claude Code, Codex, and Qwen Code on AGENTbench (138 tasks) and SWE-bench Lite (300 tasks). Key findings that shaped this framework:
+- LLM-generated context files **reduce** task success by ~3% while increasing inference cost by 20%+
+- Human-written files improve success by ~4% but only when minimal — "unnecessary requirements from context files make tasks harder"
+- Architectural overviews don't help agents find files faster — agents discover README independently
+- Agents follow instructions faithfully, so verbose instructions cause unnecessary exploration
+
+*Framework response:* Curated-over-comprehensive principle, human gates, non-obvious-only principle, line budgets.
+
+**"Codified Context: Infrastructure for AI Agents" (Feb 2026)** — Case study of 283 development sessions on a 108K-line C# system. Measured a 24.2% knowledge-to-code ratio across three tiers of context.
+- Three-tier knowledge hierarchy: Hot (~660 lines, always loaded), Specialist (domain-specific), Cold (on-demand retrieval)
+- Knowledge duplication outperformed retrieval — agents with pre-loaded context made fewer errors than those relying on lookup
+- Specification staleness was the #1 failure mode — outdated docs misled agents into conflicting code
+- Maintenance cost: ~1-2 hours weekly, ~5 minutes per session
+
+*Framework response:* Load priority tags (hot/warm/cold), freshness scoring, staleness warning headers, incremental refresh pipeline.
+
+**"Context Engineering for Coding Agents" (Martin Fowler, 2025-2026)** — Practitioner guide emphasizing "curating what the model sees" over feeding everything. Key insight: scope rules strategically — load guidance only when relevant files are accessed, not all at once.
+
+*Framework response:* Scope-based loading hints in doc headers, scope globs in manifest for selective loading.
+
+### Open-Source Tools Analyzed
+
+| Tool | What We Borrowed | What We Didn't |
+|------|-----------------|----------------|
+| **Repowise** — codebase intelligence with 4 layers (graph, git, docs, decisions) | Freshness scoring per doc, hotspot detection from git analytics, co-change detection for gotchas | MCP-as-delivery (we use curated docs, not live queries), auto-generated wikis (violates curated-over-comprehensive) |
+| **Aider repo-map** — tree-sitter symbol extraction with PageRank ranking | Graph-ranked symbol importance for shared-code/dependency-index, token budget awareness per doc | Dynamic per-session context selection (our docs are pre-generated, not session-scoped) |
+| **GitNexus** — knowledge graph engine with MCP tools (28K stars) | Blast radius concept for refresh impact analysis, pre-commit hooks for staleness detection, Mermaid diagram generation | Full knowledge graph infrastructure (over-engineered for curated doc use case), PolyForm license |
+| **Repomix** — context packing into AI-friendly formats (22K stars) | Confirmed that XML-structured output works well for AI consumption — validates our structured table format | Whole-repo packing (violates line budgets and selective loading) |
+| **RepoAgent** — LLM-powered documentation generation | Hierarchical doc generation (symbols → files → modules → repo) — informed our tier-by-tier generation order | Fully automated generation without human gates (violates curated-over-comprehensive) |
+
+### Practitioner Guides
+
+**Augment Code "How to Build Your AGENTS.md" (2026)** — Key insights adopted:
+- "One real snippet beats three paragraphs" → conventions pack uses concrete examples
+- Three-tier permission boundaries (Always / Ask First / Never) → gotchas doc format
+- Non-obvious patterns only — skip what agents can infer from training data
+- Keep context files under 150-200 lines → our line budgets
+
+**Packmind ContextOps (2026)** — Four-phase lifecycle (Build → Distribute → Govern → Maintain) that validates our generate → curate → refresh pipeline design. Key insight: only a small fraction of repos have adopted any AI config files — early adopters gain significant advantage.
