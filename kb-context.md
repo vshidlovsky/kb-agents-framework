@@ -70,12 +70,14 @@
 - [ ] screen-inventory — Screen name → route → file path → package ownership
 - [ ] navigation-graph — Screen-to-screen transition tables
 - [ ] dependency-index — Class → screens reverse lookup
+- [ ] analytics-registry — Event name → trigger → file path → parameters → domain
 
 #### Tier 3: Backend/API
 
 - [ ] api-registry — Endpoint → method → service file → DTOs → consumers
 - [ ] database-schema — Tables, relationships, migration history, ORM mapping
 - [ ] service-map — Service-to-service dependencies, protocols, retry patterns
+- [ ] log-registry — Log points → severity → file path → structured fields → alerts
 
 #### Tier 4: Cross-Cutting
 
@@ -152,7 +154,7 @@ Custom doc type pack files (one path per line, or "none"):
 | Priority | Doc Types |
 |----------|-----------|
 | hot (always load) | repo-map, app-profiles, gotchas |
-| warm (load when touching related files) | screen-inventory, api-registry, dependency-index, project-conventions, canonical-examples |
+| warm (load when touching related files) | screen-inventory, api-registry, dependency-index, analytics-registry, log-registry, project-conventions, canonical-examples |
 | cold (load on demand) | l10n-registry, env-config, database-schema, service-map, feature-flags |
 
 ### Staleness Hook

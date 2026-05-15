@@ -48,17 +48,17 @@ Incremental refresh via `/refresh-kb` — only regenerates docs whose source fil
 - **Non-obvious only** — don't document what one grep can find; KB value is relationships and reverse lookups
 - **Incremental refresh** — tracks which source files each document depends on via scope globs and commit SHAs
 - **Citation-grounded** — every claim cites a real file path; the validator checks that every cited path exists
-- **Pack-based** — 15 built-in doc type packs as a seed list + open-ended discovery for custom packs
+- **Pack-based** — 17 built-in doc type packs as a seed list + open-ended discovery for custom packs
 
 ## Doc Type Packs
 
-### Built-in (15 packs in 4 tiers)
+### Built-in (17 packs in 4 tiers)
 
 | Tier | Packs |
 |------|-------|
 | **Universal** | repo-map, app-profiles, shared-code, gotchas, canonical-examples |
-| **Frontend/Mobile** | screen-inventory, navigation-graph, dependency-index |
-| **Backend/API** | api-registry, database-schema, service-map |
+| **Frontend/Mobile** | screen-inventory, navigation-graph, dependency-index, analytics-registry |
+| **Backend/API** | api-registry, database-schema, service-map, log-registry |
 | **Cross-Cutting** | project-conventions, feature-flags, l10n-registry, env-config |
 
 ### Custom Packs
@@ -74,7 +74,7 @@ kb-agents-framework/
 │   ├── kb-generator.md            # Document generation agent
 │   ├── kb-validator.md            # Accuracy validation agent
 │   ├── kb-refresher.md            # Incremental refresh agent
-│   ├── doc-type-registry.md       # All 15 doc type packs defined
+│   ├── doc-type-registry.md       # All 17 doc type packs defined
 │   ├── quality-patterns.md        # Anti-patterns and validation checks
 │   └── manifest-schema.md         # Canonical .manifest.json schema
 ├── skills/
@@ -92,9 +92,11 @@ kb-agents-framework/
 │       ├── screen-inventory.md    # Tier 2
 │       ├── navigation-graph.md
 │       ├── dependency-index.md
+│       ├── analytics-registry.md
 │       ├── api-registry.md        # Tier 3
 │       ├── database-schema.md
 │       ├── service-map.md
+│       ├── log-registry.md
 │       ├── project-conventions.md # Tier 4
 │       ├── feature-flags.md
 │       ├── l10n-registry.md
@@ -109,14 +111,14 @@ kb-agents-framework/
 
 ## Status
 
-**Phase 5: Polish** — complete. All 4 agents, both skills, all 15 templates, manifest schema, and cross-reference resolution are built. See [docs/architecture.md](docs/architecture.md) for the full design.
+**Phase 5: Polish** — complete. All 4 agents, both skills, all 17 templates, manifest schema, and cross-reference resolution are built. See [docs/architecture.md](docs/architecture.md) for the full design.
 
 ### Implementation Phases
 
 1. **Foundation** — kb-context.md, doc-type-registry, quality-patterns, repo-map template, kb-generator ✓
 2. **Setup and Orchestration** — kb-setup agent, generate-kb skill, remaining Tier 1 templates ✓
 3. **Validation and Refresh** — kb-validator, kb-refresher, refresh-kb skill ✓
-4. **Extended Doc Types** — Tier 2/3/4 templates (all 14) ✓
+4. **Extended Doc Types** — Tier 2/3/4 templates (all 16) ✓
 5. **Polish** — cross-reference resolution, manifest schema, template consistency ✓
 
 ## Research Basis

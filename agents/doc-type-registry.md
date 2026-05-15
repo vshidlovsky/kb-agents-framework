@@ -408,6 +408,80 @@ If under 500 lines, generate a single file using the standard format.
 
 ---
 
+### analytics-registry
+
+> Template: `templates/doc-types/analytics-registry.md`
+> Load priority: **warm**
+
+**Extraction strategy:**
+
+1. Find analytics/tracking SDK initialization: grep for `Analytics.init`, `Mixpanel.init`, `Amplitude.init`, `firebase_analytics`, `trackEvent`, `logEvent`, `analytics.track`, `posthog.capture`, `segment.track`
+2. Identify the track call pattern: what method is used, what arguments it takes, how event names are structured
+3. Grep for all tracking calls across the codebase: `grep -rn` for the track method identified in step 2
+4. For each event: extract event name, file path + line number, trigger context (user tap, page load, API response, lifecycle event), parameters/properties passed
+5. Group events by domain: derive the domain from the event name prefix (e.g., `mt_` → money-transfer, `auth_` → authentication) or from the package that fires the event
+6. Identify orphaned events: events whose naming doesn't match the dominant convention, or events in unreachable code
+7. Document global properties: properties attached to every event (user_id, app_version, platform, session_id)
+8. Document any middleware/interceptor layer that transforms or enriches events before they hit the SDK
+
+**Important: completeness target.** Every distinct event name found in step 3 must appear in the output. Do not sample or truncate. If there are 200 events, list all 200. The value of this doc is exhaustive coverage — agents adding new events need to check what already exists.
+
+**Scope globs:**
+
+```
+**/analytics/**
+**/tracking/**
+**/events/**
+**/mixpanel/**
+**/amplitude/**
+**/segment/**
+**/firebase_analytics/**
+```
+
+Plus any file containing the project's track call pattern (discovered in step 2).
+
+**Output format:**
+
+Per-domain tables:
+
+| Event Name | Trigger | File Path | Parameters | Notes |
+|------------|---------|-----------|------------|-------|
+| `mt_send_money_tapped` | user tap on Send button | `packages/mt/lib/pages/send_page.dart:47` | `amount, currency, recipient_type` | |
+| `mt_transfer_completed` | API success response | `packages/mt/lib/blocs/send_bloc.dart:112` | `transfer_id, amount, currency` | also fires push notification |
+
+Tracking Infrastructure section at the top:
+
+- SDK/library name and init file
+- Track call pattern
+- Global properties
+- Middleware/enrichment layers
+
+Orphaned Events section at the bottom for naming mismatches or dead code.
+
+**Split-file strategy:**
+
+When the combined output exceeds 500 lines, generate a split-file layout:
+
+- **Index file** (`{NN}-analytics-registry.md`): 50-100 lines. Contains:
+  - Overview (total events, total domains, SDK info)
+  - Tracking infrastructure (shared across all domains)
+  - Domain summary table: Domain | Event Count | link to detail file
+  - See Also cross-references
+
+- **Detail files** (`{NN}-analytics-registry/{domain}.md`): One per domain. Contains:
+  - Full per-event table for that domain
+  - Back-link to index file
+
+- **Split key**: Event domain (derived from name prefix or package)
+- **Naming**: kebab-case domain name
+- **Threshold**: Split at 500+ lines; collapse back to single file below 350 lines
+
+If under 500 lines, generate a single file using the standard format.
+
+**Cross-references:** Links to screen-inventory, project-conventions (event naming rules), feature-flags (flag-gated events). Other docs link to the index file, not detail files.
+
+---
+
 ## Tier 3: Backend/API
 
 ### api-registry
@@ -572,6 +646,89 @@ docker-compose*.yml
 Plus Mermaid service topology diagram.
 
 **Cross-references:** Links to api-registry, env-config
+
+---
+
+### log-registry
+
+> Template: `templates/doc-types/log-registry.md`
+> Load priority: **warm**
+
+**Extraction strategy:**
+
+1. Find logging framework initialization: grep for `Logger`, `winston`, `pino`, `log4j`, `logback`, `slog`, `zerolog`, `structlog`, `logging.getLogger`, `NestJS Logger`, `console.log` (with structured wrappers)
+2. Identify log call patterns: what methods are used (`logger.info()`, `log.Error()`, `Logger.w()`, `print()`), whether structured fields or string interpolation
+3. Grep for all log calls across the codebase: `grep -rn` for the log methods identified in step 2
+4. For each log point: extract the message pattern or template, severity level, file path + line number, structured fields/context passed
+5. Group log points by domain: derive from the logger name, package, or service that emits them
+6. Document correlation/tracing: how request IDs, trace IDs, or correlation IDs propagate across log calls
+7. Document transports: where logs are sent (stdout, file, ELK, Datadog, CloudWatch, Splunk, etc.)
+8. Document alerting: which log patterns or levels trigger alerts, and through what system (PagerDuty, Slack, OpsGenie)
+9. Identify unstructured log calls: `print()`, `console.log()`, `debugPrint()` that bypass the structured logger — these are migration candidates
+
+**Important: focus on structure over exhaustive listing.** Unlike analytics events (where every event name matters), log points are more numerous and less individually meaningful. Focus on: (1) logging infrastructure, (2) severity distribution, (3) domain grouping, (4) alert-triggering patterns, and (5) unstructured calls that bypass the logger. Don't list every `logger.debug()` call — focus on ERROR/WARN levels and any INFO calls at system boundaries.
+
+**Scope globs:**
+
+```
+**/logging/**
+**/logger/**
+**/log/**
+**/observability/**
+**/telemetry/**
+**/middleware/**
+**/interceptors/**
+```
+
+Plus any file containing the project's log call pattern (discovered in step 2).
+
+**Output format:**
+
+Logging Infrastructure section at the top:
+- Framework name and config file
+- Log levels used
+- Structured vs unstructured format
+- Correlation/trace ID propagation
+- Transports (where logs go)
+- Alerting integration
+
+Severity Distribution table:
+
+| Level | Count | Domains |
+|-------|-------|---------|
+| ERROR | 45 | auth, payments, transfers |
+| WARN | 23 | payments, validation |
+
+Per-domain tables (for ERROR/WARN and boundary INFO):
+
+| Log Message / Pattern | Level | File Path | Structured Fields | Alert |
+|----------------------|-------|-----------|-------------------|-------|
+| `Transfer failed: {reason}` | ERROR | `services/transfer.go:89` | `transfer_id, user_id, error` | yes — PagerDuty |
+
+Unstructured Log Calls section at the bottom for migration candidates.
+
+**Split-file strategy:**
+
+When the combined output exceeds 500 lines, generate a split-file layout:
+
+- **Index file** (`{NN}-log-registry.md`): 50-100 lines. Contains:
+  - Overview (total log points, framework, transport)
+  - Logging infrastructure (shared)
+  - Severity distribution table
+  - Domain summary table: Domain | Log Points | Primary Level | link to detail file
+  - See Also cross-references
+
+- **Detail files** (`{NN}-log-registry/{domain}.md`): One per domain. Contains:
+  - Full per-log-point table for that domain
+  - Back-link to index file
+
+- **Split key**: Log domain (derived from logger name or package)
+- **Naming**: kebab-case domain name
+- **Threshold**: Split at 500+ lines; collapse back to single file below 350 lines
+
+If under 500 lines, generate a single file using the standard format.
+
+**Cross-references:** Links to api-registry (request/response logging), service-map (inter-service correlation), project-conventions (log message format rules). Other docs link to the index file, not detail files.
 
 ---
 
